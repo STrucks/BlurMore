@@ -1,4 +1,4 @@
-from MovieLensData import load_user_item_matrix, load_gender_vector
+from MovieLensData import load_user_item_matrix, load_gender_vector, load_user_item_matrix_100k
 import Classifiers
 from Utils import one_hot
 import numpy as np
@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
     max_user = 900
     max_item = 1000
-    X = load_user_item_matrix(max_user=max_user, max_item=max_item)
+    X = load_user_item_matrix_100k(max_user=max_user, max_item=max_item)
     T = load_gender_vector(max_user=max_user)
     #OH_T = [one_hot(int(x), 2) for x in T]
     accs = []
