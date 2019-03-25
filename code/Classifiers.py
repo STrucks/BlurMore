@@ -5,12 +5,37 @@ from Models import MLP
 
 def svm_classifier(X, T):
     from sklearn.svm import SVC
+    X_train, T_train = X[0:int(0.9 * len(X))], T[0:int(0.9 * len(X))]
+    X_test, T_test = X[int(0.9 * len(X)):], T[int(0.9 * len(X)):]
     model = SVC(kernel='linear', C=1)
-    scores = cross_val_score(model, X, T, cv=2)
-    model.fit(X, T)
-    Y = model.predict(X)
-    print("accuracy on folds:", scores)
-    print("Average accuracy over all folds:", scores.mean())
+    scores = cross_val_score(model, X_train, T_train, cv=10, scoring='roc_auc')
+    model.fit(X_train, T_train)
+    Y = model.predict(X_test)
+    print("AUC on folds:", scores)
+    print("Average AUC over all folds:", scores.mean())
+    confusion_matrix(Y, T_test)
+
+    plot_ROC = True
+    if plot_ROC:
+        import sklearn.metrics as metrics
+        # calculate the fpr and tpr for all thresholds of the classification
+        preds = model.predict(X_test)
+
+        fpr, tpr, threshold = metrics.roc_curve(T_test, preds)
+        roc_auc = metrics.auc(fpr, tpr)
+
+        # method I: plt
+        import matplotlib.pyplot as plt
+        plt.title('Receiver Operating Characteristic')
+        plt.plot(fpr, tpr, 'b', label='AUC = %0.2f' % roc_auc)
+        plt.legend(loc='lower right')
+        plt.plot([0, 1], [0, 1], 'r--')
+        plt.xlim([0, 1])
+        plt.ylim([0, 1])
+        plt.ylabel('True Positive Rate')
+        plt.xlabel('False Positive Rate')
+        plt.show()
+
     confusion_matrix(Y, T, size=int(max(T)+1))
     return scores.mean()
 
@@ -40,7 +65,7 @@ def MLP_classifier(X, T, n_items, nr_output=2):
     train = data[0:int(len(data)*0.8)]
     test = data[int(len(data)*0.8):]
     print(len(train), len(test))
-    batchsize = 20
+    batchsize = 100
     max_label = int(max(T))+1
 
     train_iter = iterators.SerialIterator(train, batchsize)

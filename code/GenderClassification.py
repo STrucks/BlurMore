@@ -1,4 +1,4 @@
-from MovieLensData import load_user_item_matrix, load_gender_vector, load_user_item_matrix_100k
+from MovieLensData import load_user_item_matrix, load_gender_vector, load_user_item_matrix_100k, load_user_item_matrix_1m, load_gender_vector_1m
 import Classifiers
 from Utils import one_hot
 import numpy as np
@@ -11,14 +11,16 @@ if __name__ == '__main__':
     import timeit
     start = timeit.default_timer()
 
-    max_user = 900
-    max_item = 1000
-    X = load_user_item_matrix_100k(max_user=max_user, max_item=max_item)
-    T = load_gender_vector(max_user=max_user)
+    max_user = 943#6040
+    max_item = 1330#3952
+    X = load_user_item_matrix_1m(max_user=max_user, max_item=max_item)
+    T = load_gender_vector_1m(max_user=max_user)
+
+    print(len(X), len(T))
     #OH_T = [one_hot(int(x), 2) for x in T]
     accs = []
     for i in range(1):
-        accs.append(Classifiers.MLP_classifier(X, T, max_item))
+        accs.append(Classifiers.svm_classifier(X, T))
 
     print(accs, "\n", sum(accs)/len(accs))
 
