@@ -10,16 +10,16 @@ def histogram():
         'occupation': [],
         'postcode': [],
     }
-    with open("ml-100k/u.user", 'r') as f:
+    with open("ml-1m/users.dat", 'r') as f:
         for line in f.readlines():
-            id, age, gender, occ, post = line.replace("\n", "").split("|")
+            id, age, gender, occ, post = line.replace("\n", "").split("::")
             df['user_id'].append(id)
             df['age'].append(age)
             df['gender'].append(gender)
             df['occupation'].append(occ)
             df['postcode'].append(post)
     import collections
-    a = df['gender']
+    a = df['age']
     counter = collections.Counter(a)
     plt.bar(counter.keys(), counter.values())
     plt.show()
@@ -40,5 +40,5 @@ def show_user_item_matrix():
     plt.title("difference between these two")
     plt.show()
 
-#histogram()
-show_user_item_matrix()
+histogram()
+#show_user_item_matrix()

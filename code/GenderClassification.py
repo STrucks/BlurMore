@@ -11,12 +11,12 @@ if __name__ == '__main__':
     import timeit
     start = timeit.default_timer()
 
-    max_user = 943#6040
-    max_item = 1330#3952
+    max_user = 6040
+    max_item = 3952
     X = load_user_item_matrix_1m(max_user=max_user, max_item=max_item)
     T = load_gender_vector_1m(max_user=max_user)
 
-    print(len(X), len(T))
+    print(X.shape, T.shape)
     #OH_T = [one_hot(int(x), 2) for x in T]
     accs = []
     for i in range(1):

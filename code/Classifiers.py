@@ -1,6 +1,7 @@
-from Utils import confusion_matrix, classification_accuracy, one_hot, plot_line
+from Utils import confusion_matrix, classification_accuracy, one_hot, plot_line, performance_measures, ROC_cv
 from sklearn.model_selection import cross_val_score
 from Models import MLP
+import numpy as np
 
 
 def svm_classifier(X, T):
@@ -8,14 +9,18 @@ def svm_classifier(X, T):
     X_train, T_train = X[0:int(0.9 * len(X))], T[0:int(0.9 * len(X))]
     X_test, T_test = X[int(0.9 * len(X)):], T[int(0.9 * len(X)):]
     model = SVC(kernel='linear', C=1)
-    scores = cross_val_score(model, X_train, T_train, cv=10, scoring='roc_auc')
+    scores = cross_val_score(model, X_train, T_train, cv=5, scoring='roc_auc')
     model.fit(X_train, T_train)
     Y = model.predict(X_test)
     print("AUC on folds:", scores)
     print("Average AUC over all folds:", scores.mean())
-    confusion_matrix(Y, T_test)
+    from sklearn.metrics import confusion_matrix as cm
+    tn, tp, fn, tp = cm(T_test, Y).ravel()
+    print(tn, tp, fn, tp)
+    print("measures", performance_measures(Y, T_test))
+    confusion_matrix(Y, T_test, size=int(max(T) + 1))
 
-    plot_ROC = True
+    plot_ROC = False
     if plot_ROC:
         import sklearn.metrics as metrics
         # calculate the fpr and tpr for all thresholds of the classification
@@ -35,12 +40,17 @@ def svm_classifier(X, T):
         plt.ylabel('True Positive Rate')
         plt.xlabel('False Positive Rate')
         plt.show()
+    random_state = np.random.RandomState(0)
+    classifier = SVC(kernel='rbf', probability=True, random_state=random_state)
 
-    confusion_matrix(Y, T, size=int(max(T)+1))
+    ROC_cv(X, T, classifier)
+
     return scores.mean()
 
 
 def log_reg(X, T):
+    X_train, T_train = X[0:int(0.9 * len(X))], T[0:int(0.9 * len(X))]
+    X_test, T_test = X[int(0.9 * len(X)):], T[int(0.9 * len(X)):]
     from sklearn.linear_model import LogisticRegression
     model = LogisticRegression()
     scores = cross_val_score(model, X, T, cv=10)
@@ -50,6 +60,11 @@ def log_reg(X, T):
     print("Average accuracy over all folds:", scores.mean())
     #print("Beta values:", model.coef_)
     confusion_matrix(Y, T)
+    print("measures", performance_measures(Y, T_test))
+    random_state = np.random.RandomState(0)
+    model = LogisticRegression(penalty='l2', random_state=random_state)
+    ROC_cv(X, T, model)
+
     return scores.mean()
 
 
