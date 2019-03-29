@@ -66,10 +66,13 @@ def performance_measures(Y, T):
     TNR = tn/(tn+fp) # specificity/selectivity
     FPR = fp/(fp+tn)
 
+    #print("tp:", tp, ",fp:", fp, "\nfn:", fn, ",tn:", tn)
+
     precision = tp/(tp+fp)
     accuracy = (tp+tn)/(tp+tn+fp+fn)
 
     return TPR, TNR, FPR, FNR, precision, accuracy
+
 
 def ROC_cv(X, T, classifier):
     import matplotlib.pyplot as plt
@@ -84,10 +87,16 @@ def ROC_cv(X, T, classifier):
     tprs = []
     aucs = []
     mean_fpr = np.linspace(0, 1, 100)
-
+    recalls = []
+    precisions = []
     i = 0
     for train, test in cv.split(X, T):
-        probas_ = classifier.fit(X[train], T[train]).predict_proba(X[test])
+        classifier.fit(X[train], T[train])
+        Y = classifier.predict(X[test])
+        TPR, TNR, FPR, FNR, precision, accuracy = performance_measures(Y, T[test])
+        recalls.append(TPR)
+        precisions.append(precision)
+        probas_ = classifier.predict_proba(X[test])
         # Compute ROC curve and area the curve
         fpr, tpr, thresholds = roc_curve(T[test], probas_[:, 1])
         # print("thresholds", thresholds)
@@ -123,3 +132,5 @@ def ROC_cv(X, T, classifier):
     plt.title('Receiver operating characteristic example')
     plt.legend(loc="lower right")
     plt.show()
+
+    print("CV recall:", np.average(recalls), "CV precision:", np.average(precisions))

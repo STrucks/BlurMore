@@ -9,16 +9,17 @@ def svm_classifier(X, T):
     X_train, T_train = X[0:int(0.9 * len(X))], T[0:int(0.9 * len(X))]
     X_test, T_test = X[int(0.9 * len(X)):], T[int(0.9 * len(X)):]
     model = SVC(kernel='linear', C=1)
-    scores = cross_val_score(model, X_train, T_train, cv=5, scoring='roc_auc')
-    model.fit(X_train, T_train)
-    Y = model.predict(X_test)
-    print("AUC on folds:", scores)
-    print("Average AUC over all folds:", scores.mean())
+    #model = SVC(kernel='rbf', C=1)
+    #scores = cross_val_score(model, X_train, T_train, cv=5, scoring='roc_auc')
+    #model.fit(X_train, T_train)
+    #Y = model.predict(X_test)
+    #print("AUC on folds:", scores)
+    #print("Average AUC over all folds:", scores.mean())
     from sklearn.metrics import confusion_matrix as cm
-    tn, tp, fn, tp = cm(T_test, Y).ravel()
-    print(tn, tp, fn, tp)
-    print("measures", performance_measures(Y, T_test))
-    confusion_matrix(Y, T_test, size=int(max(T) + 1))
+    #tn, tp, fn, tp = cm(T_test, Y).ravel()
+    #print(tn, tp, fn, tp)
+    #print("measures", performance_measures(Y, T_test))
+    #confusion_matrix(Y, T_test, size=int(max(T) + 1))
 
     plot_ROC = False
     if plot_ROC:
@@ -41,11 +42,13 @@ def svm_classifier(X, T):
         plt.xlabel('False Positive Rate')
         plt.show()
     random_state = np.random.RandomState(0)
-    classifier = SVC(kernel='rbf', probability=True, random_state=random_state)
+    classifier = SVC(kernel='linear', probability=True, random_state=random_state)
+    #classifier= SVC(kernel='rbf', C=1, probability=True, random_state=random_state)
 
     ROC_cv(X, T, classifier)
 
-    return scores.mean()
+    #return scores.mean()
+    return 0
 
 
 def log_reg(X, T):
@@ -53,13 +56,13 @@ def log_reg(X, T):
     X_test, T_test = X[int(0.9 * len(X)):], T[int(0.9 * len(X)):]
     from sklearn.linear_model import LogisticRegression
     model = LogisticRegression()
-    scores = cross_val_score(model, X, T, cv=10)
-    model.fit(X, T)
-    Y = model.predict(X)
-    print("accuracy on folds:", scores)
-    print("Average accuracy over all folds:", scores.mean())
+    #scores = cross_val_score(model, X, T, cv=10)
+    #model.fit(X, T)
+    #Y = model.predict(X)
+    #print("accuracy on folds:", scores)
+    #print("Average accuracy over all folds:", scores.mean())
     #print("Beta values:", model.coef_)
-    confusion_matrix(Y, T)
+    #confusion_matrix(Y, T)
     print("measures", performance_measures(Y, T_test))
     random_state = np.random.RandomState(0)
     model = LogisticRegression(penalty='l2', random_state=random_state)
@@ -68,7 +71,20 @@ def log_reg(X, T):
     return scores.mean()
 
 
-def MLP_classifier(X, T, n_items, nr_output=2):
+def MLP_classifier(X, T, n_items):
+    nr_output = 2
+    model = MLP(n_hidden=int(200), n_output=nr_output)
+    X_train, T_train = X[0:int(0.9 * len(X))], T[0:int(0.9 * len(X))]
+    X_test, T_test = X[int(0.9 * len(X)):], T[int(0.9 * len(X)):]
+    model.fit(X_train, T_train)
+    Y = model.predict(X_test)
+    print(Y)
+    print("measures", performance_measures(Y, T_test))
+    model = MLP(n_hidden=int(200), n_output=nr_output)
+    ROC_cv(X, T, model)
+
+
+def MLP_classifier2(X, T, n_items, nr_output=2):
     from chainer.optimizers import Adam
     from chainer import Variable
     import chainer.functions as F
@@ -96,7 +112,7 @@ def MLP_classifier(X, T, n_items, nr_output=2):
     from chainer.dataset import concat_examples
     from chainer.backends.cuda import to_cpu
 
-    max_epoch = 50
+    max_epoch = 30
     train_accs = []
     train_accs_epochs = []
     val_acc_epochs = []
@@ -176,9 +192,36 @@ def MLP_classifier(X, T, n_items, nr_output=2):
             val_acc_epochs.append(np.mean(test_accuracies))
     confusion_matrix(final_pred, target_test.data, size=max_label)
 
-    print(train_accs_epochs, val_acc_epochs)
-    plot_line(range(max_epoch), train_accs_epochs, show=False)
-    plot_line(range(max_epoch), val_acc_epochs, legend=['train accuracy', 'validation accuracy'], xlabel='epoch', ylabel='accuracy')
+    #print(train_accs_epochs, val_acc_epochs)
+    #plot_line(range(max_epoch), train_accs_epochs, show=False)
+    #plot_line(range(max_epoch), val_acc_epochs, legend=['train accuracy', 'validation accuracy'], xlabel='epoch', ylabel='accuracy')
+    X_train, T_train = X[0:int(0.9 * len(X))], T[0:int(0.9 * len(X))]
+    X_test, T_test = X[int(0.9 * len(X)):], T[int(0.9 * len(X)):]
+    X_test = Variable(X_test).data.astype(np.float32)
+    plot_ROC = True
+    if plot_ROC:
+        import sklearn.metrics as metrics
+        # calculate the fpr and tpr for all thresholds of the classification
+        preds = model(X_test)
+        final_pred = np.zeros(shape=(len(preds),))
+        for i in range(len(preds)):
+            dummy = list(preds[i].data)
+            final_pred[i] = int(dummy.index(max(dummy)))
+        #print(len(T_test), len(final_pred), len(X_test))
+        fpr, tpr, threshold = metrics.roc_curve(T_test, final_pred)
+        roc_auc = metrics.auc(fpr, tpr)
+
+        # method I: plt
+        import matplotlib.pyplot as plt
+        plt.title('Receiver Operating Characteristic')
+        plt.plot(fpr, tpr, 'b', label='AUC = %0.2f' % roc_auc)
+        plt.legend(loc='lower right')
+        plt.plot([0, 1], [0, 1], 'r--')
+        plt.xlim([0, 1])
+        plt.ylim([0, 1])
+        plt.ylabel('True Positive Rate')
+        plt.xlabel('False Positive Rate')
+        plt.show()
     return np.mean(test_accuracies)
 
 
