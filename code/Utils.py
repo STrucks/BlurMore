@@ -1,7 +1,7 @@
 import pickle
 import matplotlib.pyplot as plt
 import numpy as np
-
+from sklearn.utils.fixes import signature
 
 def save_object(obj, filename):
     with open(filename, 'wb') as output:  # Overwrites any existing file.
@@ -78,7 +78,7 @@ def ROC_cv(X, T, classifier):
     import matplotlib.pyplot as plt
     from sklearn.model_selection import StratifiedKFold
     import numpy as np
-    from sklearn.metrics import roc_curve, auc
+    from sklearn.metrics import roc_curve, auc, precision_recall_curve
     from scipy import interp
 
     # Run classifier with cross-validation and plot ROC curves
@@ -86,6 +86,7 @@ def ROC_cv(X, T, classifier):
 
     tprs = []
     aucs = []
+    p_r_aucs = []
     mean_fpr = np.linspace(0, 1, 100)
     recalls = []
     precisions = []
@@ -104,10 +105,34 @@ def ROC_cv(X, T, classifier):
         tprs[-1][0] = 0.0
         roc_auc = auc(fpr, tpr)
         aucs.append(roc_auc)
+
+        #plt.subplot(1,2,1)
         plt.plot(fpr, tpr, lw=1, alpha=0.3,
                  label='ROC fold %d (AUC = %0.2f)' % (i, roc_auc))
 
+        """
+        plt.subplot(1,2,2)
+        prec, recall, _ = precision_recall_curve(T[test], Y)
+
+        # In matplotlib < 1.5, plt.fill_between does not have a 'step' argument
+        step_kwargs = ({'step': 'post'}
+                       if 'step' in signature(plt.fill_between).parameters
+                       else {})
+        plt.plot(recall, prec, color='b', alpha=0.3,
+                 label='ROC fold %d (AUC = %0.2f)' % (i, roc_auc))
+        #plt.fill_between(recall, prec, alpha=0.2, color='b', **step_kwargs)
+
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
+        plt.ylim([0.0, 1.05])
+        plt.xlim([0.0, 1.0])
+        plt.title('2-class Precision-Recall curve: AP={0:0.2f}'.format(
+            np.average(prec)))
+        """
+
         i += 1
+
+    #plt.subplot(1,2,1)
     plt.plot([0, 1], [0, 1], linestyle='--', lw=2, color='r',
              label='Chance', alpha=.8)
 

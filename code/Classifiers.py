@@ -1,6 +1,6 @@
 from Utils import confusion_matrix, classification_accuracy, one_hot, plot_line, performance_measures, ROC_cv
 from sklearn.model_selection import cross_val_score
-from Models import MLP
+from Models import MLP, MLP_classifier
 import numpy as np
 
 
@@ -8,7 +8,7 @@ def svm_classifier(X, T):
     from sklearn.svm import SVC
     X_train, T_train = X[0:int(0.9 * len(X))], T[0:int(0.9 * len(X))]
     X_test, T_test = X[int(0.9 * len(X)):], T[int(0.9 * len(X)):]
-    model = SVC(kernel='linear', C=1)
+    #model = SVC(kernel='rbf', C=1)
     #model = SVC(kernel='rbf', C=1)
     #scores = cross_val_score(model, X_train, T_train, cv=5, scoring='roc_auc')
     #model.fit(X_train, T_train)
@@ -55,32 +55,18 @@ def log_reg(X, T):
     X_train, T_train = X[0:int(0.9 * len(X))], T[0:int(0.9 * len(X))]
     X_test, T_test = X[int(0.9 * len(X)):], T[int(0.9 * len(X)):]
     from sklearn.linear_model import LogisticRegression
-    model = LogisticRegression()
-    #scores = cross_val_score(model, X, T, cv=10)
-    #model.fit(X, T)
-    #Y = model.predict(X)
-    #print("accuracy on folds:", scores)
-    #print("Average accuracy over all folds:", scores.mean())
-    #print("Beta values:", model.coef_)
-    #confusion_matrix(Y, T)
-    print("measures", performance_measures(Y, T_test))
+
     random_state = np.random.RandomState(0)
     model = LogisticRegression(penalty='l2', random_state=random_state)
     ROC_cv(X, T, model)
 
-    return scores.mean()
+    return 0 #scores.mean()
 
 
-def MLP_classifier(X, T, n_items):
+def mlp_classifier(X, T):
     nr_output = 2
-    model = MLP(n_hidden=int(200), n_output=nr_output)
-    X_train, T_train = X[0:int(0.9 * len(X))], T[0:int(0.9 * len(X))]
-    X_test, T_test = X[int(0.9 * len(X)):], T[int(0.9 * len(X)):]
-    model.fit(X_train, T_train)
-    Y = model.predict(X_test)
-    print(Y)
-    print("measures", performance_measures(Y, T_test))
-    model = MLP(n_hidden=int(200), n_output=nr_output)
+
+    model = MLP_classifier(n_hidden=500, n_output=nr_output)
     ROC_cv(X, T, model)
 
 
@@ -225,37 +211,29 @@ def MLP_classifier2(X, T, n_items, nr_output=2):
     return np.mean(test_accuracies)
 
 
+def random_forest(X, T):
+    from sklearn.ensemble import RandomForestClassifier
+    model = RandomForestClassifier()
+    ROC_cv(X, T, model)
+    return 0
+
+
 def naive_bayes(X, T):
     from sklearn.naive_bayes import GaussianNB
     model = GaussianNB()
-    scores = cross_val_score(model, X, T, cv=10)
-    model.fit(X, T)
-    Y = model.predict(X)
-    print("accuracy on folds:", scores)
-    print("Average accuracy over all folds:", scores.mean())
-    confusion_matrix(Y, T)
-    return scores.mean()
+    ROC_cv(X, T, model)
+    return 0
 
 
 def multinomial_bayes(X, T):
     from sklearn.naive_bayes import MultinomialNB
     model = MultinomialNB()
-    scores = cross_val_score(model, X, T, cv=10)
-    model.fit(X, T)
-    Y = model.predict(X)
-    print("accuracy on folds:", scores)
-    print("Average accuracy over all folds:", scores.mean())
-    confusion_matrix(Y, T)
-    return scores.mean()
+    ROC_cv(X, T, model)
+    return 0
 
 
 def bernoulli_bayes(X, T):
     from sklearn.naive_bayes import BernoulliNB
     model = BernoulliNB()
-    scores = cross_val_score(model, X, T, cv=10)
-    model.fit(X, T)
-    Y = model.predict(X)
-    print("accuracy on folds:", scores)
-    print("Average accuracy over all folds:", scores.mean())
-    confusion_matrix(Y, T)
-    return scores.mean()
+    ROC_cv(X, T, model)
+    return 0

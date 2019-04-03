@@ -68,7 +68,7 @@ def load_user_item_matrix_1m(max_user=6040, max_item=3952):
             user_id, movie_id, rating, _ = line.split("::")
             user_id, movie_id, rating = int(user_id), int(movie_id), float(rating)
             if user_id < max_user and movie_id < max_item:
-                df[user_id-1, movie_id-1] = rating
+                df[user_id-1, movie_id] = rating
 
     save_object(df, "objs/user-item_Matrix_1m_" + str(max_user) + "_" + str(max_item))
     return df
@@ -159,6 +159,33 @@ def data_exploration():
     plt.bar(counter.keys(), counter.values())
     plt.show()
 
+
+def chi2_selection(X, T):
+    from sklearn.feature_selection import chi2 as CHI2
+    chi, pval = CHI2(X, T)
+    relevant_features = []
+    print(X.shape)
+    for index, p in enumerate(pval):
+        if p <= 0.001: # the two variables (T and the feature row) are dependent
+            relevant_features.append(X[:, index])
+    return np.transpose(np.asarray(relevant_features))
+
+
+def feature_selection(X, T, selection_method):
+    """
+    This function performs feature selection on the user item matrix
+    :param X: user item matrix
+    :param T: gender vector
+    :param selection_method: any function from sklearn.feature selection that uses only X and T as input
+    :return: the user item matrix, but with less features
+    """
+    _, pval = selection_method(X, T)
+    relevant_features = []
+    print(X.shape)
+    for index, p in enumerate(pval):
+        if p <= 0.05:  # the two variables (T and the feature row) are dependent
+            relevant_features.append(X[:, index])
+    return np.transpose(np.asarray(relevant_features))
 
 #print(load_gender_vector(max_user=100))
 #print(load_user_item_matrix())
