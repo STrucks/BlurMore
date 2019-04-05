@@ -235,5 +235,24 @@ def multinomial_bayes(X, T):
 def bernoulli_bayes(X, T):
     from sklearn.naive_bayes import BernoulliNB
     model = BernoulliNB()
+    for i, row in enumerate(X):
+        for j, value in enumerate(row):
+            if value > 0:
+                X[i,j] = 1
+
+    ROC_cv(X, T, model)
+    return 0
+
+
+def prior(X, T):
+    from Models import Prior_classifier
+    model = Prior_classifier()
+    ROC_cv(X, T, model)
+    return 0
+
+
+def random(X, T):
+    from Models import Random_classifier
+    model = Random_classifier()
     ROC_cv(X, T, model)
     return 0

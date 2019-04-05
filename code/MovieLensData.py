@@ -187,5 +187,11 @@ def feature_selection(X, T, selection_method):
             relevant_features.append(X[:, index])
     return np.transpose(np.asarray(relevant_features))
 
+
+def normalize(X):
+    from sklearn import preprocessing
+    X = preprocessing.scale(X)
+    return X
+
 #print(load_gender_vector(max_user=100))
 #print(load_user_item_matrix())

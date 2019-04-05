@@ -66,7 +66,7 @@ def performance_measures(Y, T):
     TNR = tn/(tn+fp) # specificity/selectivity
     FPR = fp/(fp+tn)
 
-    #print("tp:", tp, ",fp:", fp, "\nfn:", fn, ",tn:", tn)
+    print("tp:", tp, ",fp:", fp, "\nfn:", fn, ",tn:", tn)
 
     precision = tp/(tp+fp)
     accuracy = (tp+tn)/(tp+tn+fp+fn)

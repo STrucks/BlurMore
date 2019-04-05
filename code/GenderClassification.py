@@ -11,9 +11,11 @@ def one_million(classifier):
     max_item = 3952
     X = MD.load_user_item_matrix_1m()  # max_user=max_user, max_item=max_item)
     T = MD.load_gender_vector_1m()  # max_user=max_user)
+    X = MD.normalize(X)
     #X = MD.feature_selection(X, T, f_regression)
     #X = MD.chi2_selection(X, T)
     print(X.shape)
+    print(np.std(X,axis=0), len(np.std(X, axis=0)))
     classifier(X, T)
 
 
@@ -49,7 +51,7 @@ if __name__ == '__main__':
     #Classifiers.log_reg(X, T)
     #Classifiers.MLP_classifier(X, T, max_item)
 
-    one_hundert_k_obfuscated(Classifiers.mlp_classifier)
+    one_million(Classifiers.prior)
 
     stop = timeit.default_timer()
     print('Time: ', stop - start)

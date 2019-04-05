@@ -107,3 +107,65 @@ class MLP(Chain):
         return F.softmax(self.l3(h))
 
 
+class Prior_classifier():
+
+    def __init__(self, nr_classes=2):
+        self.majority_class = 0
+        self.nr_classes = nr_classes
+
+    def fit(self, X, T):
+        self.frequnecies = {}
+        for t in T:
+            if t not in self.frequnecies:
+                self.frequnecies[t] = 0
+            else:
+                self.frequnecies[t] +=1
+        values = [v for v in self.frequnecies.values()]
+        index_max = values.index(max(values))
+        keys = [key for key in self.frequnecies.keys()]
+        self.majority_class = keys[index_max]
+        self.other_classes = list(range(self.nr_classes))
+        self.other_classes.remove(self.majority_class)
+        self.total_frequency = len(T)
+
+
+    def predict(self, X):
+        Y = []
+        for x in X:
+            outcome = np.random.randint(0, self.total_frequency)
+            if outcome < self.frequnecies[self.majority_class]:
+                #print(outcome, self.frequnecies[self.majority_class])
+                outcome = self.majority_class
+            else:
+                outcome = self.other_classes[np.random.randint(0, self.nr_classes-1)]
+            Y.append(outcome)
+        return Y
+
+    def predict_proba(self, X):
+        Y = np.zeros(shape=(len(X), self.nr_classes))
+        Y[:, self.majority_class] = self.frequnecies[self.majority_class]/len(X)
+        shared_prob = 1-(self.frequnecies[self.majority_class]/len(X))
+        Y[:, self.other_classes] = shared_prob/(self.nr_classes-1)
+        return Y
+
+
+class Random_classifier():
+
+    def __init__(self, nr_classes=2):
+        self.nr_classes = nr_classes
+
+    def fit(self, X, T):
+        # there is nothing to fit
+        return 0
+
+    def predict(self, X):
+        Y = []
+        for x in X:
+            out_come = np.random.randint(0, self.nr_classes)
+            Y.append(out_come)
+        return Y
+
+    def predict_proba(self, X):
+        Y = np.zeros(shape=(len(X), self.nr_classes))
+        Y[:, :] = 1/self.nr_classes
+        return Y
