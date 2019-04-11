@@ -3,6 +3,7 @@ import MovieLensData as MD
 import Classifiers
 from Utils import one_hot
 import numpy as np
+from Utils import feature_selection, normalize, chi2_selection, normalize2
 from sklearn.feature_selection import f_regression, f_classif
 
 
@@ -11,9 +12,9 @@ def one_million(classifier):
     max_item = 3952
     X = MD.load_user_item_matrix_1m()  # max_user=max_user, max_item=max_item)
     T = MD.load_gender_vector_1m()  # max_user=max_user)
-    X = MD.normalize(X)
-    #X = MD.feature_selection(X, T, f_regression)
-    #X = MD.chi2_selection(X, T)
+    X = normalize2(X)
+    #X = feature_selection(X, T, f_regression)
+    #X = chi2_selection(X, T)
     print(X.shape)
     print(np.std(X,axis=0), len(np.std(X, axis=0)))
     classifier(X, T)
@@ -22,7 +23,7 @@ def one_million(classifier):
 def one_hundert_k(classifier):
     X = MD.load_user_item_matrix_100k()  # max_user=max_user, max_item=max_item)
     T = MD.load_gender_vector()  # max_user=max_user)
-    #X = MD.chi2_selection(X, T)
+    #X = chi2_selection(X, T)
 
     classifier(X, T)
 
@@ -30,7 +31,7 @@ def one_hundert_k(classifier):
 def one_hundert_k_obfuscated(classifier):
     X = MD.load_user_item_matrix_100k_masked()  # max_user=max_user, max_item=max_item)
     T = MD.load_gender_vector()  # max_user=max_user)
-    #X = MD.chi2_selection(X, T)
+    #X = chi2_selection(X, T)
 
     classifier(X, T)
 
@@ -51,7 +52,7 @@ if __name__ == '__main__':
     #Classifiers.log_reg(X, T)
     #Classifiers.MLP_classifier(X, T, max_item)
 
-    one_million(Classifiers.prior)
+    one_million(Classifiers.svm_classifier)
 
     stop = timeit.default_timer()
     print('Time: ', stop - start)

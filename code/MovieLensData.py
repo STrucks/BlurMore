@@ -68,7 +68,7 @@ def load_user_item_matrix_1m(max_user=6040, max_item=3952):
             user_id, movie_id, rating, _ = line.split("::")
             user_id, movie_id, rating = int(user_id), int(movie_id), float(rating)
             if user_id < max_user and movie_id < max_item:
-                df[user_id-1, movie_id] = rating
+                df[user_id-1, movie_id-1] = rating
 
     save_object(df, "objs/user-item_Matrix_1m_" + str(max_user) + "_" + str(max_item))
     return df
@@ -131,22 +131,64 @@ def load_gender_vector(max_user=943):
     return gender_vec
 
 
-def load_occupation_vector(max_user=943):
+def load_occupation_vector_1m(max_user=6040):
     """
     this function loads and returns the occupation for all users with an id smaller than max_user
     :param max_user: the highest user id to be retrieved
     :return: the occupation vector
     """
-    import pandas as pd
-    df = pd.read_csv("ml-20m/userObs.csv")
-    occ_vec = np.zeros(shape=(max_user,))
-    import collections
+    occ_vec = []
+    with open("ml-1m/users.dat", 'r') as f:
+        for line in f.readlines()[:max_user]:
+            user_id, gender, age, occ, postcode = line.split("::")
+            occ_vec.append(int(occ))
+    return np.asarray(occ_vec)
 
-    counter = collections.Counter(df[' occupation'])
-    keys = list(counter.keys())
-    for i in range(max_user):
-        occ_vec[i] = keys.index(df[' occupation'][i])
-    return occ_vec
+
+def load_occupation_vector_100k(max_user=943):
+    occ_labels = {}
+    with open("ml-20m/occupationLabels.csv", 'r') as f:
+        for line in f.readlines():
+            occ, label = line.replace("\n", "").split(",")
+            occ_labels[occ] = int(label)
+    #print(occ_labels)
+    occ_vector = []
+    with open("ml-20m/userObs.csv", 'r') as f:
+        for line in f.readlines()[1:]:
+            if len(line) < 2:
+                continue
+            else:
+                userid, age, gender, occupation, zipcode = line.split(", ")
+                occ_vector.append(occ_labels[occupation])
+    #print(occ_vector)
+    return np.asarray(occ_vector)
+
+
+def load_age_vector_1m(boarder=30):
+    age_vector = []
+    with open("ml-1m/users.dat", 'r') as f:
+        for line in f.readlines():
+            userid, gender, age, occupation, zipcode = line.split("::")
+            if int(age) < boarder:
+                age_vector.append(0)
+            else:
+                age_vector.append(1)
+    return np.asarray(age_vector)
+
+
+def load_age_vector_100k(boarder=30):
+    age_vector = []
+    with open("ml-20m/userObs.csv", 'r') as f:
+        for line in f.readlines()[1:]:
+            if len(line) < 2:
+                continue
+            else:
+                userid, age, gender, occupation, zipcode = line.split(", ")
+                if int(age) < boarder:
+                    age_vector.append(0)
+                else:
+                    age_vector.append(1)
+    return np.asarray(age_vector)
 
 
 def data_exploration():
@@ -160,38 +202,15 @@ def data_exploration():
     plt.show()
 
 
-def chi2_selection(X, T):
-    from sklearn.feature_selection import chi2 as CHI2
-    chi, pval = CHI2(X, T)
-    relevant_features = []
-    print(X.shape)
-    for index, p in enumerate(pval):
-        if p <= 0.001: # the two variables (T and the feature row) are dependent
-            relevant_features.append(X[:, index])
-    return np.transpose(np.asarray(relevant_features))
+def gender_user_dictionary_1m():
+    gender_dict = {}
+    with open("ml-1m/users.dat", 'r') as f:
+        for line in f.readlines():
+            userid, gender, age, occupation, zipcode = line.split("::")
+            if userid not in gender_dict:
+                gender_dict[int(userid)-1] = gender
+    return gender_dict
 
-
-def feature_selection(X, T, selection_method):
-    """
-    This function performs feature selection on the user item matrix
-    :param X: user item matrix
-    :param T: gender vector
-    :param selection_method: any function from sklearn.feature selection that uses only X and T as input
-    :return: the user item matrix, but with less features
-    """
-    _, pval = selection_method(X, T)
-    relevant_features = []
-    print(X.shape)
-    for index, p in enumerate(pval):
-        if p <= 0.05:  # the two variables (T and the feature row) are dependent
-            relevant_features.append(X[:, index])
-    return np.transpose(np.asarray(relevant_features))
-
-
-def normalize(X):
-    from sklearn import preprocessing
-    X = preprocessing.scale(X)
-    return X
 
 #print(load_gender_vector(max_user=100))
 #print(load_user_item_matrix())

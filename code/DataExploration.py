@@ -1,5 +1,6 @@
 from MovieLensData import load_user_item_matrix_100k, load_user_item_matrix
 from matplotlib import pyplot as plt
+import numpy as np
 
 
 def histogram():
@@ -12,16 +13,19 @@ def histogram():
     }
     with open("ml-1m/users.dat", 'r') as f:
         for line in f.readlines():
-            id, age, gender, occ, post = line.replace("\n", "").split("::")
+            id, gender, age, occ, post = line.replace("\n", "").split("::")
             df['user_id'].append(id)
             df['age'].append(age)
             df['gender'].append(gender)
-            df['occupation'].append(occ)
+            df['occupation'].append(int(occ))
             df['postcode'].append(post)
     import collections
-    a = df['age']
+    key = 'age'
+    a = df[key]
     counter = collections.Counter(a)
     plt.bar(counter.keys(), counter.values())
+    plt.xlabel(key)
+    plt.ylabel('frequency')
     plt.show()
 
 
@@ -84,6 +88,51 @@ def gender_rating_distr():
     plt.ylabel("Percent of ratings")
     plt.legend()
     plt.show()
-gender_rating_distr()
-#histogram()
-#show_user_item_matrix()
+
+
+def show_avg_rating_gender_per_movie(movie_id = 1):
+    import MovieLensData as MD
+    gender_dict = MD.gender_user_dictionary_1m()
+    user_item = MD.load_user_item_matrix_1m()
+    ratings = user_item[:, movie_id]
+    male_ratings = []
+    female_ratings = []
+    for user_id, rating in enumerate(ratings):
+        if rating > 0:
+            if gender_dict[user_id] == 'M':
+                male_ratings.append(rating)
+            else:
+                female_ratings.append(rating)
+
+    plt.bar(["male", "female"], [np.average(male_ratings), np.average(female_ratings)])
+    plt.show()
+
+
+def test_avg_rating_gender_per_movie():
+    import MovieLensData as MD
+    from scipy.stats import ttest_ind
+    gender_dict = MD.gender_user_dictionary_1m()
+    user_item = MD.load_user_item_matrix_1m()
+    counter = 0
+    for movie_id in range(1, 3953):
+        ratings = user_item[:, movie_id-1]
+        male_ratings = []
+        female_ratings = []
+        for user_id, rating in enumerate(ratings):
+            if rating > 0:
+                if gender_dict[user_id] == 'M':
+                    male_ratings.append(rating)
+                else:
+                    female_ratings.append(rating)
+
+        _, p_value = ttest_ind(male_ratings, female_ratings)
+        if p_value < 0.05/6040:
+            counter += 1
+            #plt.bar(["male", "female"], [np.average(male_ratings), np.average(female_ratings)])
+            #plt.show()
+
+
+    print(counter)
+
+histogram()
+#test_avg_rating_gender_per_movie()

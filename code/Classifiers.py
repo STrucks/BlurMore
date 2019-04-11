@@ -1,4 +1,4 @@
-from Utils import confusion_matrix, classification_accuracy, one_hot, plot_line, performance_measures, ROC_cv
+from Utils import confusion_matrix, classification_accuracy, one_hot, plot_line, performance_measures, ROC_cv, ROC_multiclass
 from sklearn.model_selection import cross_val_score
 from Models import MLP, MLP_classifier
 import numpy as np
@@ -8,39 +8,7 @@ def svm_classifier(X, T):
     from sklearn.svm import SVC
     X_train, T_train = X[0:int(0.9 * len(X))], T[0:int(0.9 * len(X))]
     X_test, T_test = X[int(0.9 * len(X)):], T[int(0.9 * len(X)):]
-    #model = SVC(kernel='rbf', C=1)
-    #model = SVC(kernel='rbf', C=1)
-    #scores = cross_val_score(model, X_train, T_train, cv=5, scoring='roc_auc')
-    #model.fit(X_train, T_train)
-    #Y = model.predict(X_test)
-    #print("AUC on folds:", scores)
-    #print("Average AUC over all folds:", scores.mean())
-    from sklearn.metrics import confusion_matrix as cm
-    #tn, tp, fn, tp = cm(T_test, Y).ravel()
-    #print(tn, tp, fn, tp)
-    #print("measures", performance_measures(Y, T_test))
-    #confusion_matrix(Y, T_test, size=int(max(T) + 1))
 
-    plot_ROC = False
-    if plot_ROC:
-        import sklearn.metrics as metrics
-        # calculate the fpr and tpr for all thresholds of the classification
-        preds = model.predict(X_test)
-
-        fpr, tpr, threshold = metrics.roc_curve(T_test, preds)
-        roc_auc = metrics.auc(fpr, tpr)
-
-        # method I: plt
-        import matplotlib.pyplot as plt
-        plt.title('Receiver Operating Characteristic')
-        plt.plot(fpr, tpr, 'b', label='AUC = %0.2f' % roc_auc)
-        plt.legend(loc='lower right')
-        plt.plot([0, 1], [0, 1], 'r--')
-        plt.xlim([0, 1])
-        plt.ylim([0, 1])
-        plt.ylabel('True Positive Rate')
-        plt.xlabel('False Positive Rate')
-        plt.show()
     random_state = np.random.RandomState(0)
     classifier = SVC(kernel='linear', probability=True, random_state=random_state)
     #classifier= SVC(kernel='rbf', C=1, probability=True, random_state=random_state)
@@ -51,14 +19,17 @@ def svm_classifier(X, T):
     return 0
 
 
-def log_reg(X, T):
+def log_reg(X, T, multiclass = False):
     X_train, T_train = X[0:int(0.9 * len(X))], T[0:int(0.9 * len(X))]
     X_test, T_test = X[int(0.9 * len(X)):], T[int(0.9 * len(X)):]
     from sklearn.linear_model import LogisticRegression
 
     random_state = np.random.RandomState(0)
     model = LogisticRegression(penalty='l2', random_state=random_state)
-    ROC_cv(X, T, model)
+    if multiclass:
+        ROC_multiclass(X, T, model)
+    else:
+        ROC_cv(X, T, model)
 
     return 0 #scores.mean()
 
