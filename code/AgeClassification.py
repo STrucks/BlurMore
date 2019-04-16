@@ -3,7 +3,7 @@ import MovieLensData as MD
 import Classifiers
 from Utils import one_hot
 import numpy as np
-from Utils import feature_selection, normalize, chi2_selection, normalize2
+from Utils import feature_selection, normalize, chi2_selection, normalize2, standardize
 from sklearn.feature_selection import f_regression, f_classif
 
 
@@ -11,8 +11,9 @@ def one_million(classifier):
     max_user = 6040
     max_item = 3952
     X = MD.load_user_item_matrix_1m()  # max_user=max_user, max_item=max_item)
-    T = MD.load_age_vector_1m(boarder=15)  # max_user=max_user)
+    T = MD.load_age_vector_1m(border=30)  # max_user=max_user)
     X = normalize(X)
+    print(min(X[:,0]), np.mean(X[:,0]))
     #X = feature_selection(X, T, f_regression)
     #X = chi2_selection(X, T)
     classifier(X, T)
@@ -51,7 +52,7 @@ if __name__ == '__main__':
     #Classifiers.log_reg(X, T)
     #Classifiers.MLP_classifier(X, T, max_item)
 
-    one_million(Classifiers.log_reg)
+    one_million(Classifiers.svm_classifier)
 
     stop = timeit.default_timer()
     print('Time: ', stop - start)

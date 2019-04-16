@@ -1,6 +1,7 @@
-from MovieLensData import load_user_item_matrix_100k, load_user_item_matrix
+from MovieLensData import load_user_item_matrix_100k, load_user_item_matrix_100k
 from matplotlib import pyplot as plt
 import numpy as np
+import MovieLensData as MD
 
 
 def histogram():
@@ -20,7 +21,7 @@ def histogram():
             df['occupation'].append(int(occ))
             df['postcode'].append(post)
     import collections
-    key = 'age'
+    key = 'occupation'
     a = df[key]
     counter = collections.Counter(a)
     plt.bar(counter.keys(), counter.values())
@@ -29,8 +30,27 @@ def histogram():
     plt.show()
 
 
+def rating_exploration_100k():
+    X = load_user_item_matrix_100k()
+    rating_distr = {}
+    for index, user in enumerate(X):
+        nr_ratings = 0
+        for rating in user:
+            if rating > 0:
+                nr_ratings += 1
+        if nr_ratings == 0:
+            print(index, user)
+        if nr_ratings in rating_distr:
+            rating_distr[nr_ratings] += 1
+        else:
+            rating_distr[nr_ratings] = 1
+    print(rating_distr)
+    plt.bar(rating_distr.keys(), rating_distr.values())
+    plt.show()
+
+
 def show_user_item_matrix():
-    X = load_user_item_matrix()
+    X = load_user_item_matrix_100k()
     X_ = load_user_item_matrix_100k()
     plt.subplot(3,1,1)
     plt.imshow(X_)
@@ -134,5 +154,93 @@ def test_avg_rating_gender_per_movie():
 
     print(counter)
 
-histogram()
+
+def genre_exploration_1m():
+    genres = ["Action", "Adventure", "Animation", "Children\'s", "Comedy", "Crime", "Documentary", "Drama", "Fantasy",
+              "Film-Noir", "Horror", "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller", "War", "Western"]
+    import MovieLensData as MD
+    import matplotlib.pyplot as plt
+    movie_genre = MD.load_movie_genre_matrix_1m()
+    # plot genre frequencies:
+    genre_frequency = np.sum(movie_genre, axis=0)
+    plt.bar(genres, genre_frequency)
+    plt.show()
+    print(genre_frequency)
+
+    # number of genres per movie:
+    genre_count = np.sum(movie_genre, axis=1)
+    #for index, count in enumerate(genre_count):
+    #    if count == 0:
+    #        print(index)
+    import collections
+    counter = collections.Counter(genre_count)
+    print(counter)
+    plt.bar(counter.keys(), counter.values())
+    plt.xlabel("#genres")
+    plt.ylabel('frequency')
+    plt.show()
+
+
+def loyal_vs_diverse():
+    #X = MD.load_user_item_matrix_1m()
+    #T = MD.load_gender_vector_1m()
+    genres = ["Action", "Adventure", "Animation", "Children\'s", "Comedy", "Crime", "Documentary", "Drama", "Fantasy",
+              "Film-Noir", "Horror", "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller", "War", "Western"]
+    movie_genre = MD.load_movie_genre_matrix_1m()
+    user_genre_distr = np.zeros(shape=(6040, movie_genre.shape[1]))
+    print(user_genre_distr.shape)
+    with open("ml-1m/ratings.dat", 'r') as f:
+        for line in f.readlines():
+            user_id, movie_id, rating, _ = line.split("::")
+            movie_id = int(movie_id)-1
+            user_id = int(user_id)-1
+
+            user_genre_distr[user_id,:] += movie_genre[movie_id,:]
+    loyal_percents = [0.3, 0.4, 0.5, 0.6]
+    for i, loyal_percent in enumerate(loyal_percents):
+        loyal_count = 0
+        for user in user_genre_distr:
+            if max(user)/sum(user) > loyal_percent:
+                loyal_count+=1
+        print("For threshold", loyal_percent, ",", loyal_count, "users are considered loyal")
+
+
+def show_correlation_genre():
+    genres = ["Action", "Adventure", "Animation", "Children\'s", "Comedy", "Crime", "Documentary", "Drama", "Fantasy",
+              "Film-Noir", "Horror", "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller", "War", "Western"]
+    movie_genre = MD.load_movie_genre_matrix_1m()
+    print(movie_genre.shape)
+    cooc = np.zeros(shape=(movie_genre.shape[1], movie_genre.shape[1]))
+    # show the simple co-occurrence matrix:
+    for movie in movie_genre:
+        pairs = []
+        for index1 in range(len(movie)):
+            if movie[index1] == 1:
+                for index2 in range(index1+1, len(movie)):
+                    if movie[index2] == 1:
+                        pairs.append([index1, index2])
+        for one, two in pairs:
+            cooc[one, two] += 1
+    import seaborn as sb
+    fig, ax = plt.subplots()
+    ax = sb.heatmap(cooc, linewidths=0.5)
+
+    # We want to show all ticks...
+    ax.set_xticks(np.arange(len(genres)))
+    ax.set_yticks(np.arange(len(genres)))
+    # ... and label them with the respective list entries
+    ax.set_xticklabels(genres)
+    ax.set_yticklabels(genres)
+    plt.setp(ax.get_yticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+    plt.setp(ax.get_xticklabels(), ha="left")
+    plt.title("Co-occurrence of movie genres in ML 1m")
+    plt.show()
+
+
+
+#histogram()
 #test_avg_rating_gender_per_movie()
+#loyal_vs_diverse()
+#genre_exploration_1m()
+#rating_exploration_100k()
+show_correlation_genre()

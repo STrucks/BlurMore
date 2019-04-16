@@ -45,7 +45,7 @@ if __name__ == '__main__':
     #Classifiers.log_reg(X, T)
     #Classifiers.MLP_classifier(X, T, max_item)
 
-    one_hundert_k(Classifiers.log_reg)
+    one_hundert_k(Classifiers.svm_classifier)
 
     stop = timeit.default_timer()
     print('Time: ', stop - start)

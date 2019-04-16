@@ -150,7 +150,6 @@ class Prior_classifier():
 
 
 class Random_classifier():
-
     def __init__(self, nr_classes=2):
         self.nr_classes = nr_classes
 

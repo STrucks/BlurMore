@@ -79,7 +79,7 @@ def performance_measures(Y, T):
     else:
         FPR = fp/(fp+tn)
 
-    #print("tp:", tp, ",fp:", fp, "\nfn:", fn, ",tn:", tn)
+    print("tp:", tp, ", fp:", fp, "\nfn:", fn, ", tn:", tn)
     if tp == 0:
         precision = 0
     else:
@@ -358,6 +358,11 @@ def normalize(X):
     return X
 
 
+def standardize(X):
+    from sklearn import preprocessing
+    X = preprocessing.scale(X)
+    return X
+
 def normalize2(X):
     X = np.transpose(X)
     copy = np.zeros(shape=X.shape)
@@ -383,5 +388,32 @@ def normalize2(X):
     
     """
     return np.transpose(copy)
+
+
+def is_loyal(user_ids, loyal_percent=0.4):
+    import MovieLensData as MD
+    # X = MD.load_user_item_matrix_1m()
+    # T = MD.load_gender_vector_1m()
+    genres = ["Action", "Adventure", "Animation", "Children\'s", "Comedy", "Crime", "Documentary", "Drama", "Fantasy",
+              "Film-Noir", "Horror", "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller", "War", "Western"]
+    movie_genre = MD.load_movie_genre_matrix_1m()
+    user_genre_distr = np.zeros(shape=(6040, movie_genre.shape[1]))
+    with open("ml-1m/ratings.dat", 'r') as f:
+        for line in f.readlines():
+            user_id, movie_id, rating, _ = line.split("::")
+            movie_id = int(movie_id) - 1
+            user_id = int(user_id) - 1
+            user_genre_distr[user_id, :] += movie_genre[movie_id, :]
+
+    loyal_count = 0
+    loyal_users = []
+    for user_id in user_ids:
+        user_id -= 1
+        user = user_genre_distr[user_id, :]
+        if max(user) / sum(user) > loyal_percent:
+            loyal_count += 1
+            loyal_users.append(user_id+1)
+    #print("For threshold", loyal_percent, ",", loyal_count, "users are considered loyal")
+    return loyal_users
 
 #create_occupation_label_csv_100k()

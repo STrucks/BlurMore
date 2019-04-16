@@ -22,7 +22,7 @@ def one_million(classifier):
 
 def one_hundert_k(classifier):
     X = MD.load_user_item_matrix_100k()  # max_user=max_user, max_item=max_item)
-    T = MD.load_gender_vector()  # max_user=max_user)
+    T = MD.load_gender_vector_100k()  # max_user=max_user)
     #X = chi2_selection(X, T)
 
     classifier(X, T)
@@ -30,7 +30,7 @@ def one_hundert_k(classifier):
 
 def one_hundert_k_obfuscated(classifier):
     X = MD.load_user_item_matrix_100k_masked()  # max_user=max_user, max_item=max_item)
-    T = MD.load_gender_vector()  # max_user=max_user)
+    T = MD.load_gender_vector_100k()  # max_user=max_user)
     #X = chi2_selection(X, T)
 
     classifier(X, T)
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     #Classifiers.log_reg(X, T)
     #Classifiers.MLP_classifier(X, T, max_item)
 
-    one_million(Classifiers.svm_classifier)
+    one_hundert_k(Classifiers.log_reg)
 
     stop = timeit.default_timer()
     print('Time: ', stop - start)

@@ -4,7 +4,7 @@ from Models import MLP, MLP_classifier
 import numpy as np
 
 
-def svm_classifier(X, T):
+def svm_classifier(X, T, multiclass = False):
     from sklearn.svm import SVC
     X_train, T_train = X[0:int(0.9 * len(X))], T[0:int(0.9 * len(X))]
     X_test, T_test = X[int(0.9 * len(X)):], T[int(0.9 * len(X)):]
@@ -13,7 +13,10 @@ def svm_classifier(X, T):
     classifier = SVC(kernel='linear', probability=True, random_state=random_state)
     #classifier= SVC(kernel='rbf', C=1, probability=True, random_state=random_state)
 
-    ROC_cv(X, T, classifier)
+    if multiclass:
+        ROC_multiclass(X, T, classifier)
+    else:
+        ROC_cv(X, T, classifier)
 
     #return scores.mean()
     return 0
