@@ -124,10 +124,10 @@ class Prior_classifier():
         index_max = values.index(max(values))
         keys = [key for key in self.frequnecies.keys()]
         self.majority_class = keys[index_max]
+        print("majority class:", self.majority_class)
         self.other_classes = list(range(self.nr_classes))
         self.other_classes.remove(self.majority_class)
         self.total_frequency = len(T)
-
 
     def predict(self, X):
         Y = []
@@ -139,7 +139,7 @@ class Prior_classifier():
             else:
                 outcome = self.other_classes[np.random.randint(0, self.nr_classes-1)]
             Y.append(outcome)
-        return Y
+        return np.asarray(Y)
 
     def predict_proba(self, X):
         Y = np.zeros(shape=(len(X), self.nr_classes))

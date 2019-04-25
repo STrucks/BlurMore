@@ -218,10 +218,14 @@ def bernoulli_bayes(X, T):
     return 0
 
 
-def prior(X, T):
+def prior(X, T, multiclass=False):
     from Models import Prior_classifier
-    model = Prior_classifier()
-    ROC_cv(X, T, model)
+    if multiclass:
+        model = Prior_classifier(nr_classes=21)
+        ROC_multiclass(X, T, model)
+    else:
+        model = Prior_classifier()
+        ROC_cv(X, T, model)
     return 0
 
 

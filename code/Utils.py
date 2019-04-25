@@ -352,6 +352,29 @@ def feature_selection(X, T, selection_method):
     return np.transpose(np.asarray(relevant_features))
 
 
+def select_male_female_different(X, T):
+    from scipy.stats import ttest_ind
+    X = np.transpose(X)
+    fs = []
+    p_vals = []
+    for movie in X:
+        male_ratings = []
+        female_ratings = []
+        for user_index, rating in enumerate(movie):
+            if rating > 0:
+                if T[user_index] == 1:
+                    male_ratings.append(rating)
+                else:
+                    female_ratings.append(rating)
+
+        f, p_value = ttest_ind(male_ratings, female_ratings)
+        # correct for 6040 test:
+        p_value *= len(X)
+        p_vals.append(p_value)
+        fs.append(f)
+    return fs, p_vals
+
+
 def normalize(X):
     from sklearn import preprocessing
     X = preprocessing.normalize(X)
@@ -362,6 +385,35 @@ def standardize(X):
     from sklearn import preprocessing
     X = preprocessing.scale(X)
     return X
+
+
+def center(X, axis=0, include_zero=True):
+    if axis==1:
+        X = np.transpose(X)
+
+    if include_zero:
+        mean = np.mean(X, axis=0)
+        X -= mean
+    else:
+        X = np.transpose(X)
+        centered_X = np.zeros(shape=X.shape)
+        for index, row in enumerate(X):
+            clean_row = []
+            for rating in row:
+                if rating > 0:
+                    clean_row.append(rating)
+            if len(clean_row) == 0:
+                mean = 0
+            else:
+                mean = np.mean(clean_row)
+            centered_X[index, :] = row - mean
+        X = centered_X
+        X = np.transpose(X)
+
+    if axis==1:
+        X = np.transpose(X)
+    return X
+
 
 def normalize2(X):
     X = np.transpose(X)
@@ -417,3 +469,4 @@ def is_loyal(user_ids, loyal_percent=0.4):
     return loyal_users
 
 #create_occupation_label_csv_100k()
+#print(center(np.asarray([[0. ,0. ,1. ,2.,3.],[0. ,1. ,4. ,5.,6.]]),axis=1, include_zero=False))

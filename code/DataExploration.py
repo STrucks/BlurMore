@@ -134,8 +134,9 @@ def test_avg_rating_gender_per_movie():
     gender_dict = MD.gender_user_dictionary_1m()
     user_item = MD.load_user_item_matrix_1m()
     counter = 0
-    for movie_id in range(1, 3953):
-        ratings = user_item[:, movie_id-1]
+    print(len(user_item[0]))
+    for movie_id in range(len(user_item[0])):
+        ratings = user_item[:, movie_id]
         male_ratings = []
         female_ratings = []
         for user_id, rating in enumerate(ratings):
@@ -146,7 +147,7 @@ def test_avg_rating_gender_per_movie():
                     female_ratings.append(rating)
 
         _, p_value = ttest_ind(male_ratings, female_ratings)
-        if p_value < 0.05/6040:
+        if p_value < 0.05/len(user_item[0]):
             counter += 1
             #plt.bar(["male", "female"], [np.average(male_ratings), np.average(female_ratings)])
             #plt.show()
@@ -221,6 +222,8 @@ def show_correlation_genre():
                         pairs.append([index1, index2])
         for one, two in pairs:
             cooc[one, two] += 1
+            cooc[two, one] += 1
+
     import seaborn as sb
     fig, ax = plt.subplots()
     ax = sb.heatmap(cooc, linewidths=0.5)
@@ -239,8 +242,8 @@ def show_correlation_genre():
 
 
 #histogram()
-#test_avg_rating_gender_per_movie()
+test_avg_rating_gender_per_movie()
 #loyal_vs_diverse()
 #genre_exploration_1m()
 #rating_exploration_100k()
-show_correlation_genre()
+#show_correlation_genre()

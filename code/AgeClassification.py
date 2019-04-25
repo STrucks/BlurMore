@@ -12,7 +12,7 @@ def one_million(classifier):
     max_item = 3952
     X = MD.load_user_item_matrix_1m()  # max_user=max_user, max_item=max_item)
     T = MD.load_age_vector_1m(border=30)  # max_user=max_user)
-    X = normalize(X)
+    #X = normalize(X)
     print(min(X[:,0]), np.mean(X[:,0]))
     #X = feature_selection(X, T, f_regression)
     #X = chi2_selection(X, T)

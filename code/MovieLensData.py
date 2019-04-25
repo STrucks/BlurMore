@@ -59,7 +59,7 @@ def load_user_item_matrix_100k_masked(max_user=943, max_item=1682):
         for line in f.readlines()[1:]:
             user_id, movie_id, rating = line.split(",")
             user_id, movie_id, rating = int(user_id), int(movie_id), float(rating)
-            if user_id < max_user and movie_id < max_item:
+            if user_id <= max_user and movie_id <= max_item:
                 df[user_id-1, movie_id] = rating
 
     save_object(df, "objs/user-item_Matrix_" + str(max_user) + "_" + str(max_item))
@@ -80,14 +80,33 @@ def load_user_item_matrix_1m(max_user=6040, max_item=3952):
 
     df = np.zeros(shape=(max_user, max_item))
     with open("ml-1m/ratings.dat", 'r') as f:
-        for line in f.readlines()[1:]:
+        for line in f.readlines():
             user_id, movie_id, rating, _ = line.split("::")
             user_id, movie_id, rating = int(user_id), int(movie_id), float(rating)
-            if user_id < max_user and movie_id < max_item:
+            if user_id <= max_user and movie_id <= max_item:
                 df[user_id-1, movie_id-1] = rating
 
-    save_object(df, "objs/user-item_Matrix_1m_" + str(max_user) + "_" + str(max_item))
+    #save_object(df, "objs/user-item_Matrix_1m_" + str(max_user) + "_" + str(max_item))
     return df
+
+
+def load_user_genre_matrix_1m(one_hot = False):
+    user_item = load_user_item_matrix_1m()
+    movie_genre = load_movie_genre_matrix_1m()
+    print(user_item.shape, movie_genre.shape)
+    user_genre = np.zeros(shape=(user_item.shape[0], movie_genre.shape[1]))
+    for user_index, user in enumerate(user_item):
+        for movie_index, rating in enumerate(user):
+            if rating > 0:
+                user_genre[user_index, :] += movie_genre[movie_index, :]
+    if one_hot:
+        u_g_one = np.zeros(shape=user_genre.shape)
+        for index, user in enumerate(user_genre):
+            max_index = list(user).index(np.max(user))
+            u_g_one[index, max_index] = 1
+        user_genre = u_g_one
+
+    return user_genre
 
 
 def load_gender_vector_1m(max_user=6040):
@@ -226,5 +245,3 @@ def load_movie_genre_matrix_1m():
             for g in genre:
                 matrix[int(id)-1, genres.index(g)] = 1
     return matrix
-
-

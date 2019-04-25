@@ -7,10 +7,10 @@ import sklearn.metrics as metrics
 
 def few_ratings():
     #X = MD.load_user_item_matrix_1m()
-    X = MD.load_user_item_matrix_100k()
+    X = MD.load_user_item_matrix_1m()
     X = Utils.normalize(X)
     #T = MD.load_gender_vector_1m()
-    T = MD.load_gender_vector_100k()
+    T = MD.load_gender_vector_1m()
     X_train, T_train = X[0:int(0.9 * len(X))], T[0:int(0.9 * len(X))]
     X_test, T_test = X[int(0.9 * len(X)):], T[int(0.9 * len(X)):]
     test_data = list(zip(X_test, T_test))
@@ -22,7 +22,8 @@ def few_ratings():
     model.fit(X_train, T_train)
     #Utils.ROC_plot(X_test, T_test, model)
     roc = True
-    for index, max_rating in enumerate([20, 50, 100, 1000]):
+    min_rating = [0, 21, 51, 101]
+    for index, max_rating in enumerate([20, 50, 100, 200]):
         selected_X = []
         selected_T = []
         for user, label in test_data:
@@ -30,9 +31,29 @@ def few_ratings():
             for rating in user:
                 if rating > 0:
                     counter += 1
-            if counter <= max_rating:
+            if min_rating[index] <= counter <= max_rating:
                 selected_X.append(user)
                 selected_T.append(label)
+        # resample:
+
+        """
+        sampled_X = []
+        sampled_T = []
+        for i in range(1000):
+            sample_id = np.random.randint(len(selected_X))
+            sampled_X.append(selected_X[sample_id])
+            sampled_T.append(selected_T[sample_id])
+        selected_X = sampled_X
+        selected_T = sampled_T
+        if len(selected_X)> 100:
+            data = list(zip(selected_X, selected_T))
+            np.random.shuffle(data)
+            selected_X = []
+            selected_T = []
+            for x, y in list(data)[:100]:
+                selected_X.append(x)
+                selected_T.append(y)
+        """
         probs = model.predict_proba(selected_X)
         preds = probs[:, 1]
         fpr, tpr, threshold = metrics.roc_curve(selected_T, preds)
@@ -40,7 +61,7 @@ def few_ratings():
         if roc:
             # method I: plt
             plt.subplot(2, 2, index+1)
-            plt.title('Receiver Operating Characteristic with useres having rated less than ' + str(max_rating) + ' making N=' + str(len(selected_X)))
+            plt.title('Receiver Operating Characteristic with users having rated between ' + str(max_rating) + " and " + str(min_rating[index]) + ' making N=' + str(len(selected_X)))
             plt.plot(fpr, tpr, 'b', label='AUC = %0.2f' % roc_auc)
             plt.legend(loc='lower right')
             plt.plot([0, 1], [0, 1], 'r--')
@@ -159,4 +180,4 @@ def loyal_ratings():
         plt.show()
 
 
-loyal_ratings()
+few_ratings()
