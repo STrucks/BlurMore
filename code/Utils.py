@@ -442,13 +442,13 @@ def normalize2(X):
     return np.transpose(copy)
 
 
-def is_loyal(user_ids, loyal_percent=0.4):
+def is_loyal(user_ids, loyal_percent_lower=0.4, loyal_percent_upper = 1):
     import MovieLensData as MD
     # X = MD.load_user_item_matrix_1m()
     # T = MD.load_gender_vector_1m()
     genres = ["Action", "Adventure", "Animation", "Children\'s", "Comedy", "Crime", "Documentary", "Drama", "Fantasy",
               "Film-Noir", "Horror", "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller", "War", "Western"]
-    movie_genre = MD.load_movie_genre_matrix_1m()
+    movie_genre = MD.load_movie_genre_matrix_1m(combine=True)
     user_genre_distr = np.zeros(shape=(6040, movie_genre.shape[1]))
     with open("ml-1m/ratings.dat", 'r') as f:
         for line in f.readlines():
@@ -462,7 +462,7 @@ def is_loyal(user_ids, loyal_percent=0.4):
     for user_id in user_ids:
         user_id -= 1
         user = user_genre_distr[user_id, :]
-        if max(user) / sum(user) > loyal_percent:
+        if loyal_percent_upper >= max(user) / sum(user) > loyal_percent_lower:
             loyal_count += 1
             loyal_users.append(user_id+1)
     #print("For threshold", loyal_percent, ",", loyal_count, "users are considered loyal")

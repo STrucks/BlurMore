@@ -111,7 +111,6 @@ def gender_rating_distr():
 
 
 def show_avg_rating_gender_per_movie(movie_id = 1):
-    import MovieLensData as MD
     gender_dict = MD.gender_user_dictionary_1m()
     user_item = MD.load_user_item_matrix_1m()
     ratings = user_item[:, movie_id]
@@ -187,8 +186,9 @@ def loyal_vs_diverse():
     #T = MD.load_gender_vector_1m()
     genres = ["Action", "Adventure", "Animation", "Children\'s", "Comedy", "Crime", "Documentary", "Drama", "Fantasy",
               "Film-Noir", "Horror", "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller", "War", "Western"]
-    movie_genre = MD.load_movie_genre_matrix_1m()
+    movie_genre = MD.load_movie_genre_matrix_1m(combine=True)
     user_genre_distr = np.zeros(shape=(6040, movie_genre.shape[1]))
+    user_gender_dict = MD.gender_user_dictionary_1m()
     print(user_genre_distr.shape)
     with open("ml-1m/ratings.dat", 'r') as f:
         for line in f.readlines():
@@ -197,12 +197,19 @@ def loyal_vs_diverse():
             user_id = int(user_id)-1
 
             user_genre_distr[user_id,:] += movie_genre[movie_id,:]
-    loyal_percents = [0.3, 0.4, 0.5, 0.6]
+    loyal_percents = [0.5, 0.6, 0.7]
     for i, loyal_percent in enumerate(loyal_percents):
         loyal_count = 0
-        for user in user_genre_distr:
+        for user_index, user in enumerate(user_genre_distr):
             if max(user)/sum(user) > loyal_percent:
-                loyal_count+=1
+                if True:
+                    #print the user:
+                    print(user_gender_dict[user_index])
+                    top_5_index = user.argsort()[-5:][::-1]
+                    for index in top_5_index:
+                        print(genres[index], user[index])
+
+                loyal_count += 1
         print("For threshold", loyal_percent, ",", loyal_count, "users are considered loyal")
 
 
@@ -240,10 +247,59 @@ def show_correlation_genre():
     plt.show()
 
 
+def plot_genre_1m():
+    genres = ["Action", "Adventure", "Animation", "Children\'s", "Comedy", "Crime", "Documentary", "Drama",
+              "Fantasy", "Film-Noir", "Horror", "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller", "War",
+              "Western"]
+    f, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
+    movie_genre = MD.load_movie_genre_matrix_1m(combine=False)
+    ax1.bar(genres, np.sum(movie_genre, axis=0))
+    ax1.set_title("genre distribution in ML 1m")
+    plt.setp(ax1.get_xticklabels(), rotation=-45, ha="left")
+
+    movie_genre = MD.load_movie_genre_matrix_1m(combine=True)
+    ax2.bar(genres, np.sum(movie_genre, axis=0))
+    ax2.set_title("genre distribution in ML 1m, Drama&Romance are combined to Drama ect.")
+    plt.setp(ax2.get_xticklabels(), rotation=-45, ha="left")
+    plt.show()
+
+
+def show_gender_genre_comparison():
+    # This plot shows the
+    genres = ["Action", "Adventure", "Animation", "Children\'s", "Comedy", "Crime", "Documentary", "Drama",
+              "Fantasy", "Film-Noir", "Horror", "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller", "War",
+              "Western"]
+
+    movie_genre = MD.load_movie_genre_matrix_1m()
+    male_genre = np.zeros(shape=(len(genres, )))
+    female_genre = np.zeros(shape=(len(genres, )))
+    user_gender_dict = MD.gender_user_dictionary_1m()
+    user_genre = MD.load_user_genre_matrix_1m()
+    for user_index, user in enumerate(user_genre):
+        if user_gender_dict[user_index] == "M":
+            male_genre += user
+        else:
+            female_genre += user
+    print(male_genre)
+    print(female_genre)
+    x = np.arange(len(genres))
+    ax = plt.subplot(111)
+    ax.bar(x-0.2, male_genre/750000, width=0.4, label='male')
+    ax.bar(x+0.2, female_genre/250000, width=0.4, label='female')
+    plt.xticks(x, ("Action", "Adventure", "Animation", "Children\'s", "Comedy", "Crime", "Documentary", "Drama",
+              "Fantasy", "Film-Noir", "Horror", "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller", "War",
+              "Western"))
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+
 
 #histogram()
-test_avg_rating_gender_per_movie()
+#test_avg_rating_gender_per_movie()
 #loyal_vs_diverse()
 #genre_exploration_1m()
 #rating_exploration_100k()
 #show_correlation_genre()
+#plot_genre_1m()
+show_gender_genre_comparison()

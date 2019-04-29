@@ -149,7 +149,7 @@ def loyal_ratings():
     roc = True
     for index, percent_loyal in enumerate([0.2, 0.3, 0.4, 0.5]):
         test_ids = [i+1 for i in Test_indecies]
-        selected_ids = Utils.is_loyal(test_ids, loyal_percent=percent_loyal)
+        selected_ids = Utils.is_loyal(test_ids, loyal_percent_lower=percent_loyal, loyal_percent_upper=percent_loyal+0.1)
         selected_indecies = [i-1 for i in selected_ids]
         selected_X = X[selected_indecies]
         selected_T = T[selected_indecies]
@@ -162,8 +162,8 @@ def loyal_ratings():
         if roc:
             # method I: plt
             plt.subplot(2, 2, index + 1)
-            plt.title('Receiver Operating Characteristic with users having a loyality of ' + str(
-                percent_loyal) + ' making N=' + str(len(selected_X)))
+            plt.title('Receiver Operating Characteristic with users having a loyality between ' + str(
+                percent_loyal) + ' and ' + str(percent_loyal+0.1) + ' making N=' + str(len(selected_X)))
             plt.plot(fpr, tpr, 'b', label='AUC = %0.2f' % roc_auc)
             plt.legend(loc='lower right')
             plt.plot([0, 1], [0, 1], 'r--')
@@ -180,4 +180,4 @@ def loyal_ratings():
         plt.show()
 
 
-few_ratings()
+loyal_ratings()

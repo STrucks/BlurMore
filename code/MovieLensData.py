@@ -1,6 +1,7 @@
 import numpy as np
 from Utils import save_object, load_object
 
+
 def movie_id_index_20m():
     """
     This function creates a dictionary that assigns each movie id a unique identifier. Since the movie ids in the 100k
@@ -60,7 +61,7 @@ def load_user_item_matrix_100k_masked(max_user=943, max_item=1682):
             user_id, movie_id, rating = line.split(",")
             user_id, movie_id, rating = int(user_id), int(movie_id), float(rating)
             if user_id <= max_user and movie_id <= max_item:
-                df[user_id-1, movie_id] = rating
+                df[user_id-1, movie_id-1] = rating
 
     save_object(df, "objs/user-item_Matrix_" + str(max_user) + "_" + str(max_item))
     return df
@@ -90,9 +91,9 @@ def load_user_item_matrix_1m(max_user=6040, max_item=3952):
     return df
 
 
-def load_user_genre_matrix_1m(one_hot = False):
+def load_user_genre_matrix_1m(one_hot=False, top=5):
     user_item = load_user_item_matrix_1m()
-    movie_genre = load_movie_genre_matrix_1m()
+    movie_genre = load_movie_genre_matrix_1m(combine=True)
     print(user_item.shape, movie_genre.shape)
     user_genre = np.zeros(shape=(user_item.shape[0], movie_genre.shape[1]))
     for user_index, user in enumerate(user_item):
@@ -101,9 +102,53 @@ def load_user_genre_matrix_1m(one_hot = False):
                 user_genre[user_index, :] += movie_genre[movie_index, :]
     if one_hot:
         u_g_one = np.zeros(shape=user_genre.shape)
-        for index, user in enumerate(user_genre):
-            max_index = list(user).index(np.max(user))
-            u_g_one[index, max_index] = 1
+        for user_index, user in enumerate(user_genre):
+            top_5_index = user.argsort()[-top:][::-1]
+            for index in top_5_index:
+                u_g_one[user_index, index] = 1
+
+        user_genre = u_g_one
+
+    return user_genre
+
+
+def load_user_genre_matrix_100k(one_hot=False, top=5):
+    user_item = load_user_item_matrix_100k()
+    movie_genre = load_movie_genre_matrix_100k(combine=False)
+    print(user_item.shape, movie_genre.shape)
+    user_genre = np.zeros(shape=(user_item.shape[0], movie_genre.shape[1]))
+    for user_index, user in enumerate(user_item):
+        for movie_index, rating in enumerate(user):
+            if rating > 0:
+                user_genre[user_index, :] += movie_genre[movie_index, :]
+    if one_hot:
+        u_g_one = np.zeros(shape=user_genre.shape)
+        for user_index, user in enumerate(user_genre):
+            top_5_index = user.argsort()[-top:][::-1]
+            for index in top_5_index:
+                u_g_one[user_index, index] = 1
+
+        user_genre = u_g_one
+
+    return user_genre
+
+
+def load_user_genre_matrix_100k_obfuscated(one_hot=False, top=5):
+    user_item = load_user_item_matrix_100k_masked()
+    movie_genre = load_movie_genre_matrix_100k(combine=False)
+    print(user_item.shape, movie_genre.shape)
+    user_genre = np.zeros(shape=(user_item.shape[0], movie_genre.shape[1]))
+    for user_index, user in enumerate(user_item):
+        for movie_index, rating in enumerate(user):
+            if rating > 4:
+                user_genre[user_index, :] += movie_genre[movie_index, :]
+    if one_hot:
+        u_g_one = np.zeros(shape=user_genre.shape)
+        for user_index, user in enumerate(user_genre):
+            top_5_index = user.argsort()[-top:][::-1]
+            for index in top_5_index:
+                u_g_one[user_index, index] = 1
+
         user_genre = u_g_one
 
     return user_genre
@@ -228,20 +273,65 @@ def gender_user_dictionary_1m():
     return gender_dict
 
 
-def load_movie_genre_matrix_1m():
+def load_movie_genre_matrix_1m(combine=False):
     """
     This function loads the movie genre matrix for ML 1m. Said matrix is MxG, where M denotes the movie_id and G the
     genre id.
     :return: said matrix
     """
+    if combine:
+        # Since Drama co-occurs so frequently with Romance and Comedy, we will consider movies that are romantic
+        # dramas just as dramas. Same for Drama & Comedy and Romantic & Comedy
+        genres = ["Action", "Adventure", "Animation", "Children\'s", "Comedy", "Crime", "Documentary", "Drama",
+                  "Fantasy", "Film-Noir", "Horror", "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller", "War",
+                  "Western"]
+        matrix = np.zeros(shape=(3952, len(genres)))
 
-    genres = ["Action", "Adventure", "Animation", "Children\'s", "Comedy", "Crime", "Documentary", "Drama", "Fantasy", "Film-Noir", "Horror", "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller", "War", "Western"]
-    matrix = np.zeros(shape=(3952, len(genres)))
+        with open("ml-1m/movies.dat", 'r') as f:
+            for line in f.readlines():
+                id, name, genre = line.replace("\n", "").split("::")
+                genre = genre.split("|")
+                if "Drama" in genre and "Romance" in genre:
+                    genre.remove("Romance")
+                if "Drama" in genre and "Comedy" in genre:
+                    genre.remove("Comedy")
+                if "Romance" in genre and "Comedy" in genre:
+                    genre.remove("Romance")
 
-    with open("ml-1m/movies.dat", 'r') as f:
-        for line in f.readlines():
-            id, name, genre = line.replace("\n", "").split("::")
-            genre = genre.split("|")
-            for g in genre:
-                matrix[int(id)-1, genres.index(g)] = 1
+                for g in genre:
+                    matrix[int(id) - 1, genres.index(g)] = 1
+    else:
+        genres = ["Action", "Adventure", "Animation", "Children\'s", "Comedy", "Crime", "Documentary", "Drama", "Fantasy", "Film-Noir", "Horror", "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller", "War", "Western"]
+        matrix = np.zeros(shape=(3952, len(genres)))
+
+        with open("ml-1m/movies.dat", 'r') as f:
+            for line in f.readlines():
+                id, name, genre = line.replace("\n", "").split("::")
+                genre = genre.split("|")
+                for g in genre:
+                    matrix[int(id)-1, genres.index(g)] = 1
     return matrix
+
+
+def load_movie_genre_matrix_100k(combine=False):
+    """
+    This function loads the movie genre matrix for ML 100k. Said matrix is MxG, where M denotes the movie_id and G the
+    genre id.
+    :return: said matrix
+    """
+    if combine:
+        # Since Drama co-occurs so frequently with Romance and Comedy, we will consider movies that are romantic
+        # dramas just as dramas. Same for Drama & Comedy and Romantic & Comedy
+        print("not implemented yet")
+    else:
+        genres = ["unknown", "Action", "Adventure", "Animation", "Children\'s", "Comedy", "Crime", "Documentary", "Drama", "Fantasy", "Film-Noir", "Horror", "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller", "War", "Western"]
+        matrix = np.zeros(shape=(3952, len(genres)))
+
+        with open("ml-100k/u.item", 'r') as f:
+            for id, line in enumerate(f.readlines()):
+                genre_vector = line.replace("\n", "")[-37:]
+                genre_vector = genre_vector.split("|")
+                genre_vector = np.asarray([int(x) for x in genre_vector])
+                matrix[int(id)-1, :] += genre_vector
+    return matrix
+
