@@ -22,19 +22,21 @@ def svm_classifier(X, T, multiclass = False):
     return 0
 
 
-def log_reg(X, T, multiclass = False):
+def log_reg(X, T, multiclass = False, nr_classes=21, show_plot=True):
     X_train, T_train = X[0:int(0.9 * len(X))], T[0:int(0.9 * len(X))]
     X_test, T_test = X[int(0.9 * len(X)):], T[int(0.9 * len(X)):]
     from sklearn.linear_model import LogisticRegression
 
     random_state = np.random.RandomState(0)
     model = LogisticRegression(penalty='l2', random_state=random_state)
+    mean_auc = 0
+    std_auc = 0
     if multiclass:
-        ROC_multiclass(X, T, model)
+        ROC_multiclass(X, T, model, n_classes=nr_classes)
     else:
-        ROC_cv(X, T, model)
+        mean_auc, std_auc = ROC_cv(X, T, model, show_plot=show_plot)
 
-    return 0 #scores.mean()
+    return mean_auc, std_auc
 
 
 def mlp_classifier(X, T):
@@ -218,11 +220,11 @@ def bernoulli_bayes(X, T):
     return 0
 
 
-def prior(X, T, multiclass=False):
+def prior(X, T, multiclass=False, nr_classes=21):
     from Models import Prior_classifier
     if multiclass:
-        model = Prior_classifier(nr_classes=21)
-        ROC_multiclass(X, T, model)
+        model = Prior_classifier(nr_classes=nr_classes)
+        ROC_multiclass(X, T, model, n_classes=nr_classes)
     else:
         model = Prior_classifier()
         ROC_cv(X, T, model)
@@ -233,4 +235,15 @@ def random(X, T):
     from Models import Random_classifier
     model = Random_classifier()
     ROC_cv(X, T, model)
+    return 0
+
+
+def dominant(X, T, multiclass=False, nr_classes=21):
+    from Models import Dominant_Class_Classifier
+    if multiclass:
+        model = Dominant_Class_Classifier(nr_classes=nr_classes)
+        ROC_multiclass(X, T, model, n_classes=nr_classes)
+    else:
+        model = Dominant_Class_Classifier()
+        ROC_cv(X, T, model)
     return 0

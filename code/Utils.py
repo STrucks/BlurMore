@@ -15,6 +15,19 @@ def load_object(filename):
         return pickle.load(f)
 
 
+def shuffle_two_arrays(a, b):
+    a = np.asarray(a)
+    b = np.asarray(b)
+    a_new = np.zeros(shape=a.shape)
+    b_new = np.zeros(shape=b.shape)
+    masking = np.arange(len(a))
+    np.random.shuffle(masking)
+    for index in range(len(a)):
+        a_new[index, :] = a[masking[index], :]
+        b_new[index] = b[masking[index]]
+    return a, b
+
+
 def confusion_matrix(y, t, size=2, image=False):
     print("Confusion Matrix")
     #print(y,t)
@@ -104,6 +117,9 @@ def ROC_plot(X, T, model):
     import sklearn.metrics as metrics
     probs = model.predict_proba(X)
     preds = probs[:, 1]
+    y_pred = model.predict(X)
+    from sklearn.metrics import accuracy_score
+    print("accuracy:", accuracy_score(T, y_pred))
     fpr, tpr, threshold = metrics.roc_curve(T, preds)
     roc_auc = metrics.auc(fpr, tpr)
 
@@ -119,7 +135,8 @@ def ROC_plot(X, T, model):
     plt.xlabel('False Positive Rate')
     plt.show()
 
-def ROC_cv(X, T, classifier):
+
+def ROC_cv(X, T, classifier, show_plot = True):
     import matplotlib.pyplot as plt
     from sklearn.model_selection import StratifiedKFold
     import numpy as np
@@ -138,7 +155,13 @@ def ROC_cv(X, T, classifier):
     i = 0
     for train, test in cv.split(X, T):
         print(i)
-        classifier.fit(X[train], T[train])
+        x, t = X[train], T[train]
+        # do feature selection:
+        #print(x.shape)
+        #x = random_forest_selection(x, t)
+        #print(x.shape)
+
+        classifier.fit(x, t)
         Y = classifier.predict(X[test])
         TPR, TNR, FPR, FNR, precision, accuracy = performance_measures(Y, T[test])
         recalls.append(TPR)
@@ -153,8 +176,8 @@ def ROC_cv(X, T, classifier):
         aucs.append(roc_auc)
 
         #plt.subplot(1,2,1)
-        plt.plot(fpr, tpr, lw=1, alpha=0.3,
-                 label='ROC fold %d (AUC = %0.2f)' % (i, roc_auc))
+        if show_plot:
+            plt.plot(fpr, tpr, lw=1, alpha=0.3, label='ROC fold %d (AUC = %0.2f)' % (i, roc_auc))
 
         """
         plt.subplot(1,2,2)
@@ -179,32 +202,36 @@ def ROC_cv(X, T, classifier):
         i += 1
 
     #plt.subplot(1,2,1)
-    plt.plot([0, 1], [0, 1], linestyle='--', lw=2, color='r',
+    if show_plot:
+        plt.plot([0, 1], [0, 1], linestyle='--', lw=2, color='r',
              label='Chance', alpha=.8)
 
     mean_tpr = np.mean(tprs, axis=0)
     mean_tpr[-1] = 1.0
     mean_auc = auc(mean_fpr, mean_tpr)
     std_auc = np.std(aucs)
-    plt.plot(mean_fpr, mean_tpr, color='b',
-             label=r'Mean ROC (AUC = %0.2f $\pm$ %0.2f)' % (mean_auc, std_auc),
-             lw=2, alpha=.8)
+    if show_plot:
+        plt.plot(mean_fpr, mean_tpr, color='b',
+                 label=r'Mean ROC (AUC = %0.2f $\pm$ %0.2f)' % (mean_auc, std_auc),
+                 lw=2, alpha=.8)
 
-    std_tpr = np.std(tprs, axis=0)
-    tprs_upper = np.minimum(mean_tpr + std_tpr, 1)
-    tprs_lower = np.maximum(mean_tpr - std_tpr, 0)
-    plt.fill_between(mean_fpr, tprs_lower, tprs_upper, color='grey', alpha=.2,
-                     label=r'$\pm$ 1 std. dev.')
+        std_tpr = np.std(tprs, axis=0)
+        tprs_upper = np.minimum(mean_tpr + std_tpr, 1)
+        tprs_lower = np.maximum(mean_tpr - std_tpr, 0)
+        plt.fill_between(mean_fpr, tprs_lower, tprs_upper, color='grey', alpha=.2,
+                         label=r'$\pm$ 1 std. dev.')
 
-    plt.xlim([-0.05, 1.05])
-    plt.ylim([-0.05, 1.05])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('Receiver operating characteristic example')
-    plt.legend(loc="lower right")
-    plt.show()
+        plt.xlim([-0.05, 1.05])
+        plt.ylim([-0.05, 1.05])
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title('Receiver operating characteristic example')
+        plt.legend(loc="lower right")
+
+        plt.show()
 
     print("CV recall:", np.average(recalls), "+-", np.std(recalls), "CV precision:", np.average(precisions), "+-", np.std(precisions))
+    return mean_auc, std_auc
 
 
 def ROC_multiclass(X, T, classifier, n_classes=21):
@@ -213,7 +240,7 @@ def ROC_multiclass(X, T, classifier, n_classes=21):
     import numpy as np
     from sklearn.metrics import roc_curve, auc, precision_recall_curve
     from scipy import interp
-
+    print("n_classes", n_classes)
     # Run classifier with cross-validation and plot ROC curves
     cv = StratifiedKFold(n_splits=5)
 
@@ -243,7 +270,7 @@ def ROC_multiclass(X, T, classifier, n_classes=21):
                 if T[test][i] == class_i:
                     T_test[i] = 1
 
-            TPR, TNR, FPR, FNR, precision, accuracy = performance_measures(Y, T_test)
+            TPR, TNR, FPR, FNR, precision, accuracy = performance_measures(Y_test, T_test)
             recalls.append(TPR)
             precisions.append(precision)
             probas_ = classifier.predict_proba(X[test])
@@ -335,6 +362,33 @@ def chi2_selection(X, T):
     return np.transpose(np.asarray(relevant_features))
 
 
+def random_forest_selection(X, T, threshold = 0.0001):
+    from sklearn.ensemble import ExtraTreesClassifier
+    importance = np.zeros(shape=(X.shape[1],))
+    for i in range(10):
+        model = ExtraTreesClassifier(max_depth=10)
+        model.fit(X, T)
+        importance += model.feature_importances_
+    importance /= 10
+
+    selected = []
+    not_selected = []
+    counter = 0
+    for movie, score in enumerate(importance):
+        if score > threshold:
+            selected.append(X[:, movie])
+            print(movie + 1, end=",")
+            counter += 1
+    print()
+    for movie, score in enumerate(importance):
+        if score <= threshold:
+            not_selected.append(X[:, movie])
+
+
+    #print(counter)
+    return np.transpose(np.asarray(selected)), np.transpose(np.asarray(not_selected))
+
+
 def feature_selection(X, T, selection_method):
     """
     This function performs feature selection on the user item matrix
@@ -347,7 +401,8 @@ def feature_selection(X, T, selection_method):
     relevant_features = []
     print(X.shape)
     for index, p in enumerate(pval):
-        if p <= 0.05:  # the two variables (T and the feature row) are dependent
+        if p >= 0.05/len(pval):  # the two variables (T and the feature row) are dependent
+            #print(index+1, end=",")
             relevant_features.append(X[:, index])
     return np.transpose(np.asarray(relevant_features))
 
@@ -366,13 +421,25 @@ def select_male_female_different(X, T):
                     male_ratings.append(rating)
                 else:
                     female_ratings.append(rating)
+        """
+        if len(male_ratings) == 1:
+            male_ratings = [male_ratings[0],male_ratings[0]]
+        if len(female_ratings) == 1:
+            female_ratings = [female_ratings[0],female_ratings[0]]
+
+        if len(male_ratings) == 0:
+            male_ratings = [0,0]
+        if len(female_ratings) == 0:
+            female_ratings = [0,0]
+        """
 
         f, p_value = ttest_ind(male_ratings, female_ratings)
-        # correct for 6040 test:
-        p_value *= len(X)
         p_vals.append(p_value)
         fs.append(f)
     return fs, p_vals
+
+
+
 
 
 def normalize(X):
@@ -467,6 +534,20 @@ def is_loyal(user_ids, loyal_percent_lower=0.4, loyal_percent_upper = 1):
             loyal_users.append(user_id+1)
     #print("For threshold", loyal_percent, ",", loyal_count, "users are considered loyal")
     return loyal_users
+
+
+def remove_significant_features(X, T):
+    items = X.shape[1]
+    male_index = np.argwhere(T == 0).reshape(1, -1)[0]
+    female_index = np.argwhere(T == 1).reshape(1, -1)[0]
+
+    print(male_index)
+    for item in range(items):
+
+        male_ratings = X[np.argwhere(X[male_index, item]>0).reshape(1,-1)[0]]
+        female_ratings = X[female_index, item]
+        print(male_index.shape)
+
 
 #create_occupation_label_csv_100k()
 #print(center(np.asarray([[0. ,0. ,1. ,2.,3.],[0. ,1. ,4. ,5.,6.]]),axis=1, include_zero=False))

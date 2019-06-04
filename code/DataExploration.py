@@ -31,7 +31,7 @@ def histogram():
 
 
 def rating_exploration_100k():
-    X = load_user_item_matrix_100k()
+    X = MD.load_user_item_matrix_1m()
     rating_distr = {}
     for index, user in enumerate(X):
         nr_ratings = 0
@@ -40,6 +40,35 @@ def rating_exploration_100k():
                 nr_ratings += 1
         if nr_ratings == 0:
             print(index, user)
+        if nr_ratings in rating_distr:
+            rating_distr[nr_ratings] += 1
+        else:
+            rating_distr[nr_ratings] = 1
+    print(rating_distr)
+    plt.bar(rating_distr.keys(), rating_distr.values())
+    plt.show()
+    rating_distr = {}
+    for index, user in enumerate(X):
+        for rating in user:
+            if rating not in rating_distr:
+                rating_distr[rating] = 1
+            else:
+                rating_distr[rating] += 1
+    print(rating_distr)
+    print(X.shape[0]*X.shape[1])
+    plt.bar(rating_distr.keys(), rating_distr.values())
+    plt.show()
+
+    rating_distr = {}
+    X = np.transpose(X)
+    for index, item in enumerate(X):
+        nr_ratings = 0
+        for rating in item:
+            if rating > 0:
+                nr_ratings += 1
+        if nr_ratings == 0:
+            print(index, item)
+            continue
         if nr_ratings in rating_distr:
             rating_distr[nr_ratings] += 1
         else:
@@ -110,7 +139,7 @@ def gender_rating_distr():
     plt.show()
 
 
-def show_avg_rating_gender_per_movie(movie_id = 1):
+def show_avg_rating_gender_per_movie(movie_id=1):
     gender_dict = MD.gender_user_dictionary_1m()
     user_item = MD.load_user_item_matrix_1m()
     ratings = user_item[:, movie_id]
@@ -127,11 +156,17 @@ def show_avg_rating_gender_per_movie(movie_id = 1):
     plt.show()
 
 
-def test_avg_rating_gender_per_movie():
+def test_avg_rating_gender_per_movie_1m():
     import MovieLensData as MD
-    from scipy.stats import ttest_ind
+    from scipy.stats import ttest_ind, mannwhitneyu
     gender_dict = MD.gender_user_dictionary_1m()
     user_item = MD.load_user_item_matrix_1m()
+
+    movies = {}
+    with open("ml-1m/movies.dat", 'r') as f:
+        for line in f.readlines():
+            id, name, genre = line.replace("\n", "").split("::")
+            movies[int(id)] = name + "::" + genre
     counter = 0
     print(len(user_item[0]))
     for movie_id in range(len(user_item[0])):
@@ -145,14 +180,79 @@ def test_avg_rating_gender_per_movie():
                 else:
                     female_ratings.append(rating)
 
-        _, p_value = ttest_ind(male_ratings, female_ratings)
-        if p_value < 0.05/len(user_item[0]):
-            counter += 1
-            #plt.bar(["male", "female"], [np.average(male_ratings), np.average(female_ratings)])
-            #plt.show()
+        try:
+            _, p_value = mannwhitneyu(male_ratings, female_ratings)
 
+            if p_value < 0.05/len(user_item[0]):
+                #print(movie_id+1, "%.2f" % np.average(male_ratings), len(male_ratings), "%.2f" % np.average(female_ratings), len(female_ratings), p_value)
+                counter += 1
+                #plt.bar(["male", "female"], [np.average(male_ratings), np.average(female_ratings)])
+                #plt.show()
+                if np.average(male_ratings) > np.average(female_ratings):
+                    print(str(movie_id + 1) + "::" + movies[movie_id + 1] + "::M")
+                if np.average(male_ratings) < np.average(female_ratings):
+                    print(str(movie_id + 1) + "::" + movies[movie_id + 1] + "::F")
+        except:
+            print("Testing failed for", movie_id)
 
+    print(str(1 + 1) + "::" + movies[1])
     print(counter)
+
+
+def test_avg_rating_gender_per_movie_100k():
+    import MovieLensData as MD
+    from scipy.stats import ttest_ind, mannwhitneyu
+    gender_vec = MD.load_gender_vector_100k()
+    user_item = MD.load_user_item_matrix_100k()
+
+    movies = {}
+    with open("ml-100k/u.item", 'r') as f:
+        for line in f.readlines():
+            i1 = line.find("|")
+            id = line[:i1]
+            i2 = line.find("|", i1+1)
+            name = line[i1+1:i2]
+            movies[int(id)] = name
+    counter = 0
+    print(len(user_item[0]))
+    for movie_id in range(len(user_item[0])):
+        ratings = user_item[:, movie_id]
+        male_ratings = []
+        female_ratings = []
+        for user_id, rating in enumerate(ratings):
+            if rating > 0:
+                if gender_vec[user_id] == 0:
+                    male_ratings.append(rating)
+                else:
+                    female_ratings.append(rating)
+        try:
+
+            if len(male_ratings) == 0:
+                male_ratings = np.array([0])
+            if len(female_ratings) == 0:
+                female_ratings = np.array([0])
+            if np.average(male_ratings) == np.average(female_ratings):
+                continue
+
+            _, p_value = ttest_ind(male_ratings, female_ratings)
+            #print(p_value)
+            if p_value < (0.05/len(user_item[0])):
+                #print(movie_id+1, "%.2f" % np.average(male_ratings), len(male_ratings), "%.2f" % np.average(female_ratings), len(female_ratings), p_value)
+                counter += 1
+                #print(np.average(male_ratings) , np.average(female_ratings))
+                #print(male_ratings, female_ratings)
+                #plt.bar(["male", "female"], [np.average(male_ratings), np.average(female_ratings)])
+                #plt.show()
+                if np.average(male_ratings) > np.average(female_ratings):
+                    print(str(movie_id + 1) + "::" + movies[movie_id + 1] + "::M")
+                if np.average(male_ratings) < np.average(female_ratings):
+                    print(str(movie_id + 1) + "::" + movies[movie_id + 1] + "::F")
+        except:
+            print(male_ratings, female_ratings)
+            print("Testing failed for", movie_id)
+            continue
+
+    print("counter", counter)
 
 
 def genre_exploration_1m():
@@ -211,6 +311,21 @@ def loyal_vs_diverse():
 
                 loyal_count += 1
         print("For threshold", loyal_percent, ",", loyal_count, "users are considered loyal")
+
+    if True:
+        user_loyalty_male = []
+        user_loyalty_female = []
+        for user_index, user in enumerate(user_genre_distr):
+            loyalty = max(user) / sum(user)
+            if user_gender_dict[user_index] == 'M':
+                user_loyalty_male.append(loyalty)
+                plt.scatter(user_index, loyalty, c='b')
+            else:
+                user_loyalty_female.append(loyalty)
+                plt.scatter(user_index, loyalty, c='r')
+        print(np.average(user_loyalty_male))
+        print(np.average(user_loyalty_female))
+        #plt.show()
 
 
 def show_correlation_genre():
@@ -291,15 +406,193 @@ def show_gender_genre_comparison():
               "Western"))
     plt.legend()
     plt.tight_layout()
+    plt.setp(ax.get_xticklabels(), rotation=20)
     plt.show()
 
 
+def PCA_100k():
+    X = MD.load_user_item_matrix_100k()
+    T = MD.load_gender_vector_100k()
+    males = X[np.argwhere(T==0)[:,0]]
+    females = X[np.argwhere(T==1)[:,0]]
+    print(females.shape)
+    from sklearn.decomposition import PCA
+    pca = PCA(n_components=2)
+    PC = pca.fit_transform(males)
+    for x, y in PC:
+        plt.scatter(x, y, c='b')
+    PC = pca.fit_transform(females)
+    for x, y in PC:
+        plt.scatter(x, y, c='r')
+
+    plt.show()
+
+    for index, (x,y) in enumerate(PC):
+        if T[index] == 0:
+            plt.scatter(x, y, c='b')
+        else:
+            plt.scatter(x, y, c='r')
+    plt.show()
+    print(PC)
+
+
+def feature_importance_100k():
+    from sklearn.ensemble import ExtraTreesClassifier
+    X = MD.load_user_item_matrix_100k()
+    T = MD.load_gender_vector_100k()
+    importance = np.zeros(shape=(X.shape[1],))
+    for i in range(100):
+        model = ExtraTreesClassifier()
+        model.fit(X, T)
+        importance += model.feature_importances_
+    importance /= 100
+    plt.plot(range(len(importance)), importance)
+    plt.xlabel("movie index")
+    plt.ylabel("importance")
+    plt.show()
+    counter = 0
+    for movie, score in enumerate(importance):
+        if score >= 0.002:
+            print(movie + 1, end=",")
+            counter += 1
+    print()
+    print(counter)
+
+
+def feature_importance_1m():
+    from sklearn.ensemble import RandomForestClassifier
+    X = MD.load_user_item_matrix_1m()
+    T = MD.load_gender_vector_1m()
+    importance = np.zeros(shape=(X.shape[1],))
+    for i in range(10):
+        model = RandomForestClassifier()
+        model.fit(X, T)
+        importance += model.feature_importances_
+    importance /= 10
+    plt.bar(range(1,len(importance[0:30])+1), importance[0:30])
+    plt.xlabel("movie index")
+    plt.ylabel("importance")
+    plt.show()
+
+    counter = 0
+    for movie, score in enumerate(importance):
+        if score >= 0.002:
+            print(movie + 1, end=",")
+            counter += 1
+    print()
+    print(counter)
+    nr_ratings = np.zeros(shape=(X.shape[1],))
+    for index, movie in enumerate(np.transpose(X)):
+        counter = 0
+        for rating in movie:
+            if rating > 0:
+                counter += 1
+        nr_ratings[index] = counter
+
+    avg_nr_per_importance = {}
+    nr_ratings_importance = []
+    for nr, imp in zip(nr_ratings, importance):
+        if imp in avg_nr_per_importance:
+            avg_nr_per_importance[imp].append(nr)
+        else:
+            avg_nr_per_importance[imp] = [nr]
+        nr_ratings_importance.append([nr, imp])
+
+
+    #for key in avg_nr_per_importance.keys():
+    #    avg_nr_per_importance[key] = np.average(avg_nr_per_importance[key])
+    #print(avg_nr_per_importance)
+    plt.subplot(1,2,1)
+    for nr, imp in nr_ratings_importance:
+        plt.scatter(nr, imp)
+    plt.xlabel("#ratings")
+    plt.ylabel("importance")
+
+    plt.subplot(1,2,2)
+    for nr, imp in nr_ratings_importance:
+        if nr < 100:
+            plt.scatter(nr, imp)
+    plt.xlabel("#ratings")
+    plt.ylabel("importance")
+
+    plt.show()
+
+
+def find_good_threshold():
+    import Classifiers
+    import Utils
+    max_user = 6040
+    max_item = 3952
+    # X = MD.load_user_item_matrix_1m_limited_ratings(limit=200)  # max_user=max_user, max_item=max_item)
+    X = MD.load_user_item_matrix_1m()
+    T = MD.load_gender_vector_1m()  # max_user=max_user)
+
+    X_train, T_train = X[0:int(0.8 * len(X))], T[0:int(0.8 * len(X))]
+    X_test, T_test = X[int(0.8 * len(X)):], T[int(0.8 * len(X)):]
+
+    # print(X)
+    # X = Utils.remove_significant_features(X, T)
+    # X = feature_selection(X, T, Utils.select_male_female_different)
+    # X = Utils.normalize(X)
+    # X = Utils.standardize(X)
+    # X = chi2_selection(X, T)
+
+    precision = 20
+    begin, end = 0, 0.001
+    auc_rel = []
+    auc_irrel = []
+    std_rel = []
+    std_irrel = []
+    size_r = []
+    size_i = []
+    for t in np.linspace(begin, end, precision):
+        print(X_train.shape)
+        X_train_important, X_train_compl = Utils.random_forest_selection(X_train, T_train, threshold=t)
+        print(X_train_important.shape)
+        size_r.append(X_train_important.shape[1])
+        size_i.append(X_train_compl.shape[1])
+
+        mean_auc_r, std_auc_r = Classifiers.log_reg(X_train_important, T_train, show_plot=False)
+        mean_auc_i, std_auc_i = Classifiers.log_reg(X_train_compl, T_train, show_plot=False)
+        auc_rel.append(mean_auc_r)
+        auc_irrel.append(mean_auc_i)
+        std_rel.append(std_auc_r)
+        std_irrel.append(std_auc_i)
+
+    auc_rel, auc_irrel, std_rel, std_irrel = np.asarray(auc_rel), np.asarray(auc_irrel), np.asarray(
+        std_rel), np.asarray(std_irrel)
+    plt.subplot(1, 2, 1)
+
+    plt.plot(np.linspace(begin, end, precision), auc_rel, c='b', label='AUC of important features')
+    auc_upper = np.minimum(auc_rel + std_rel, 1)
+    auc_lower = np.maximum(auc_rel - std_rel, 0)
+    plt.fill_between(np.linspace(begin, end, precision), auc_lower, auc_upper, color='grey', alpha=.2)
+
+    plt.plot(np.linspace(begin, end, precision), auc_irrel, c='r', label='AUC of not important features')
+    auc_upper = np.minimum(auc_irrel + std_irrel, 1)
+    auc_lower = np.maximum(auc_irrel - std_irrel, 0)
+    plt.fill_between(np.linspace(begin, end, precision), auc_lower, auc_upper, color='grey', alpha=.2)
+
+    plt.xlabel("Threshold")
+    plt.ylabel("Mean AUC")
+    plt.legend()
+
+    plt.subplot(1, 2, 2)
+    plt.plot(np.linspace(begin, end, precision), size_r, c='b', label='number of important movies')
+    plt.plot(np.linspace(begin, end, precision), size_i, c='r', label='number of meaningless movies')
+    plt.xlabel("Threshold")
+    plt.ylabel("#samples in data")
+    plt.legend()
+    plt.show()
 
 #histogram()
-#test_avg_rating_gender_per_movie()
+#test_avg_rating_gender_per_movie_1m()
+#test_avg_rating_gender_per_movie_100k()
 #loyal_vs_diverse()
 #genre_exploration_1m()
 #rating_exploration_100k()
 #show_correlation_genre()
 #plot_genre_1m()
-show_gender_genre_comparison()
+#show_gender_genre_comparison()
+#PCA_100k()
+feature_importance_1m()

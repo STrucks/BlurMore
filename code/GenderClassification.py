@@ -5,39 +5,93 @@ from Utils import one_hot
 import Utils
 import numpy as np
 from Utils import feature_selection, normalize, chi2_selection, normalize2
-from sklearn.feature_selection import f_regression, f_classif
-
+from sklearn.feature_selection import f_regression, f_classif, chi2
+import matplotlib.pyplot as plt
 
 def one_million(classifier):
-    max_user = 6040
-    max_item = 3952
-    #X = MD.load_user_item_matrix_1m()  # max_user=max_user, max_item=max_item)
-    X = MD.load_user_genre_matrix_1m(one_hot=True, top=13)
-    print(X)
+    X = MD.load_user_item_matrix_1m()  # max_user=max_user, max_item=max_item)
+    # X = MD.load_user_genre_matrix_100k_obfuscated()
+
     T = MD.load_gender_vector_1m()  # max_user=max_user)
-    #X = feature_selection(X, T, Utils.select_male_female_different)
-    #X = Utils.standardize(X)
-    #X = chi2_selection(X, T)
-    print(X.shape)
-    classifier(X, T)
+    X_train, T_train = X[0:int(0.8 * len(X))], T[0:int(0.8 * len(X))]
+    X_test, T_test = X[int(0.8 * len(X)):], T[int(0.8 * len(X)):]
+
+    # print(X)
+    print("before", X_train.shape)
+    # X = Utils.remove_significant_features(X, T)
+    #X_train, _ = Utils.random_forest_selection(X_train, T_train)
+    # X = feature_selection(X, T, Utils.select_male_female_different)
+    print(X_train.shape)
+
+    # X = Utils.normalize(X)
+    # X = Utils.standardize(X)
+    # X = chi2_selection(X, T)
+
+    classifier(X_train, T_train)
+    from sklearn.linear_model import LogisticRegression
+    random_state = np.random.RandomState(0)
+    model = LogisticRegression(penalty='l2', random_state=random_state)
+    model.fit(X_train, T_train)
+    Utils.ROC_plot(X_test, T_test, model)
+
+
+def one_million_obfuscated(classifier):
+    #X2 = MD.load_user_item_matrix_1m()  # max_user=max_user, max_item=max_item)
+    X1 = MD.load_user_item_matrix_1m()
+    X2 = MD.load_user_item_matrix_1m_masked(file_index=10)  # max_user=max_user, max_item=max_item)
+
+    T = MD.load_gender_vector_1m()  # max_user=max_user)
+    X_train, T_train = X1[0:int(0.8 * len(X1))], T[0:int(0.8 * len(X1))]
+    X_test, T_test = X2[int(0.8 * len(X2)):], T[int(0.8 * len(X2)):]
+
+    # print(X)
+    print("before", X_train.shape)
+    # X = Utils.remove_significant_features(X, T)
+    # X_train, _ = Utils.random_forest_selection(X_train, T_train)
+    # X = feature_selection(X, T, Utils.select_male_female_different)
+    print(X_train.shape)
+    from sklearn.linear_model import LogisticRegression
+    random_state = np.random.RandomState(0)
+    model = LogisticRegression(penalty='l2', random_state=random_state)
+    model.fit(X_train, T_train)
+    Utils.ROC_plot(X_test, T_test, model)
 
 
 def one_hundert_k(classifier):
-    #X = MD.load_user_item_matrix_100k()  # max_user=max_user, max_item=max_item)
-    X = MD.load_user_genre_matrix_100k()
-    #X = Utils.normalize(X)
+    X = MD.load_user_item_matrix_100k()  # max_user=max_user, max_item=max_item)
+    #X = MD.load_user_genre_matrix_100k()
     T = MD.load_gender_vector_100k()  # max_user=max_user)
-    #X = chi2_selection(X, T)
+    X_train, T_train = X[0:int(0.8 * len(X))], T[0:int(0.8 * len(X))]
+    X_test, T_test = X[int(0.8 * len(X)):], T[int(0.8 * len(X)):]
 
-    classifier(X, T)
+    # print(X)
+    print(X_train.shape)
+    # X = Utils.remove_significant_features(X, T)
+    #X_train = Utils.random_forest_selection(X_train, T_train)
+    # X = feature_selection(X, T, Utils.select_male_female_different)
+    print(X_train.shape)
+
+    # X = Utils.normalize(X)
+    # X = Utils.standardize(X)
+    # X = chi2_selection(X, T)
+
+    classifier(X_train, T_train)
 
 
 def one_hundert_k_obfuscated(classifier):
-    #X = MD.load_user_item_matrix_100k_masked()  # max_user=max_user, max_item=max_item)
-    X = MD.load_user_genre_matrix_100k_obfuscated()
+    X1 = MD.load_user_item_matrix_100k()
+    X2 = MD.load_user_item_matrix_100k_masked(file_index=1)  # max_user=max_user, max_item=max_item)
+    X3 = MD.load_user_item_matrix_100k_masked(file_index=-1)
+
     T = MD.load_gender_vector_100k()  # max_user=max_user)
-    #X = chi2_selection(X, T)
-    classifier(X, T)
+    X_train, T_train = X3[0:int(0.8 * len(X3))], T[0:int(0.8 * len(X3))]
+    X_test, T_test = X1[int(0.8 * len(X1)):], T[int(0.8 * len(X1)):]
+
+    from sklearn.linear_model import LogisticRegression
+    random_state = np.random.RandomState(0)
+    model = LogisticRegression(penalty='l2', random_state=random_state)
+    model.fit(X_train, T_train)
+    Utils.ROC_plot(X_test, T_test, model)
 
 
 if __name__ == '__main__':
@@ -56,7 +110,7 @@ if __name__ == '__main__':
     #Classifiers.log_reg(X, T)
     #Classifiers.MLP_classifier(X, T, max_item)
 
-    one_hundert_k_obfuscated(Classifiers.log_reg)
+    one_million_obfuscated(Classifiers.log_reg)
 
     stop = timeit.default_timer()
     print('Time: ', stop - start)

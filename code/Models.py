@@ -149,6 +149,37 @@ class Prior_classifier():
         return Y
 
 
+class Dominant_Class_Classifier():
+    def __init__(self, nr_classes=2):
+        self.majority_class = 0
+        self.nr_classes = nr_classes
+
+    def fit(self, X, T):
+        self.frequnecies = {}
+        for t in T:
+            if t not in self.frequnecies:
+                self.frequnecies[t] = 0
+            else:
+                self.frequnecies[t] += 1
+        values = [v for v in self.frequnecies.values()]
+        index_max = values.index(max(values))
+        keys = [key for key in self.frequnecies.keys()]
+        self.majority_class = keys[index_max]
+        print("majority class:", self.majority_class)
+        self.other_classes = list(range(self.nr_classes))
+        self.other_classes.remove(self.majority_class)
+        self.total_frequency = len(T)
+
+    def predict(self, X):
+        Y = np.ones(shape=(X.shape[0],)) * self.majority_class
+        return np.asarray(Y)
+
+    def predict_proba(self, X):
+        Y = np.zeros(shape=(len(X), self.nr_classes))
+        Y[:, self.majority_class] = 1
+        return Y
+
+
 class Random_classifier():
     def __init__(self, nr_classes=2):
         self.nr_classes = nr_classes

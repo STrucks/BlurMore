@@ -43,7 +43,7 @@ def load_user_item_matrix_100k(max_user=943, max_item=1682):
     return df
 
 
-def load_user_item_matrix_100k_masked(max_user=943, max_item=1682):
+def load_user_item_matrix_100k_masked(max_user=943, max_item=1682, file_index=-1):
     """
         this function loads the user x items matrix from the **old** movie lens data set.
         Both input parameter represent a threshold for the maximum user id or maximum item id
@@ -56,26 +56,39 @@ def load_user_item_matrix_100k_masked(max_user=943, max_item=1682):
     #    load_object("objs/user-item_Matrix_old_" + str(max_user) + "_" + str(max_item))
 
     df = np.zeros(shape=(max_user, max_item))
-    with open("ml-100k/ml_shuffle_0.5_k40.csv", 'r') as f:
+    masked_files = ["ml-100k/global_random_ml.csv",
+                    "ml-100k/ml_shuffle_0.5_k40.csv",
+                    "ml-100k/shuffle_remove_features.csv",
+                    "ml-100k/shuffle_remove_features_277.csv",
+                    "ml-100k/shuffle_feauture_111.csv",
+                    "ml-100k/shuffle_feauture_1140.csv",
+                    "ml-100k/shuffle_within_1153.csv",
+                    "ml-100k/blurme_obfuscated_0.1.csv",
+                    "ml-100k/blurme_obfuscated_0.05.csv",
+                    "ml-100k/blurme_obfuscated_0.01.csv",
+                    "ml-100k/blurme_obfuscated_0.1_greedy_avg.csv",
+
+                    ]
+    with open(masked_files[file_index], 'r') as f:
         for line in f.readlines()[1:]:
             user_id, movie_id, rating = line.split(",")
             user_id, movie_id, rating = int(user_id), int(movie_id), float(rating)
             if user_id <= max_user and movie_id <= max_item:
-                df[user_id-1, movie_id-1] = rating
-
-    save_object(df, "objs/user-item_Matrix_" + str(max_user) + "_" + str(max_item))
+                df[user_id-1, movie_id-1] = rating #np.random.randint(1, 6)
+    #df = np.random.randint(0, 6, size=(max_user, max_item))
+    #save_object(df, "objs/user-item_Matrix_" + str(max_user) + "_" + str(max_item))
     return df
 
 
 def load_user_item_matrix_1m(max_user=6040, max_item=3952):
     """
-        this function loads the user x items matrix from the  movie lens data set.
-        Both input parameter represent a threshold for the maximum user id or maximum item id
-        The highest user id is 6040 and the highest movie id is 3952 for the original data set, however, the masked data
-        set contains only 943 users and 1330 items
-        :return: user-item matrix
-        """
-    import os.path
+    this function loads the user x items matrix from the  movie lens data set.
+    Both input parameter represent a threshold for the maximum user id or maximum item id
+    The highest user id is 6040 and the highest movie id is 3952 for the original data set, however, the masked data
+    set contains only 943 users and 1330 items
+    :return: user-item matrix
+    """
+    #import os.path
     #if os.path.isfile("objs/user-item_Matrix_1m_" + str(max_user) + "_" + str(max_item)):
     #    load_object("objs/user-item_Matrix_1m_" + str(max_user) + "_" + str(max_item))
 
@@ -89,6 +102,50 @@ def load_user_item_matrix_1m(max_user=6040, max_item=3952):
 
     #save_object(df, "objs/user-item_Matrix_1m_" + str(max_user) + "_" + str(max_item))
     return df
+
+
+def load_user_item_matrix_1m_masked(max_user=6040, max_item=3952, file_index=-1):
+
+    df = np.zeros(shape=(max_user, max_item))
+    files = ["ml-1m/blurme_obfuscated_0.1_random_highest.dat",
+             "ml-1m/blurme_obfuscated_0.05_random_highest.dat",
+             "ml-1m/blurme_obfuscated_0.01_random_highest.dat",
+             "ml-1m/blurme_obfuscated_0.05_sampled_highest.dat",
+             "ml-1m/blurme_obfuscated_0.01_sampled_highest.dat",
+             "ml-1m/blurme_obfuscated_0.01_greedy_highest.dat",
+             "ml-1m/blurme_obfuscated_0.01_greedy_avg.dat",
+             "ml-1m/blurme_obfuscated_0.01_sampled_avg.dat",
+             "ml-1m/blurme_obfuscated_0.01_random_avg.dat",
+             "ml-1m/blurme_obfuscated_0.05_random_avg.dat",
+             "ml-1m/blurme_obfuscated_0.1_random_avg.dat",
+             "ml-1m/blurme_obfuscated_0.1_sampled_avg.dat",
+             "ml-1m/blurme_obfuscated_0.1_greedy_avg.dat",
+             "ml-1m/rebalanced_(100,1500).dat",
+             "ml-1m/rebalanced_(100,1000).dat",
+             "ml-1m/rebalanced_(100,700).dat",
+             ]
+    with open(files[file_index], 'r') as f:
+        for line in f.readlines():
+            user_id, movie_id, rating, _ = line.split("::")
+            user_id, movie_id, rating = int(user_id), int(movie_id), float(rating)
+            if user_id <= max_user and movie_id <= max_item:
+                df[user_id-1, movie_id-1] = rating
+
+    return df
+
+
+def load_user_item_matrix_1m_limited_ratings(limit=20):
+    user_item = load_user_item_matrix_1m()
+    user_item_limited = np.zeros(shape=user_item.shape)
+    for user_index, user in enumerate(user_item):
+        # filter rating indices
+        rating_index = np.argwhere(user > 0).reshape(1, -1)[0]
+        # shuffle them
+        np.random.shuffle(rating_index)
+        for i in rating_index[:limit]:
+            user_item_limited[user_index, i] = user[i]
+    #print(np.sum(user_item_limited, axis=1))
+    return user_item_limited
 
 
 def load_user_genre_matrix_1m(one_hot=False, top=5):
@@ -334,4 +391,13 @@ def load_movie_genre_matrix_100k(combine=False):
                 genre_vector = np.asarray([int(x) for x in genre_vector])
                 matrix[int(id)-1, :] += genre_vector
     return matrix
+
+
+def load_movie_id_dictionary_1m():
+    dict = {}
+    with open("ml-1m/movies.dat", 'r') as f:
+        for line in f.readlines():
+            id, name, genres = line.split("::")
+            dict[int(id)] = name
+    return dict
 
