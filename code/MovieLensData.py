@@ -112,17 +112,23 @@ def load_user_item_matrix_1m_masked(max_user=6040, max_item=3952, file_index=-1)
              "ml-1m/blurme_obfuscated_0.01_random_highest.dat",
              "ml-1m/blurme_obfuscated_0.05_sampled_highest.dat",
              "ml-1m/blurme_obfuscated_0.01_sampled_highest.dat",
-             "ml-1m/blurme_obfuscated_0.01_greedy_highest.dat",
+             "ml-1m/blurme_obfuscated_0.01_greedy_highest.dat",#5
              "ml-1m/blurme_obfuscated_0.01_greedy_avg.dat",
              "ml-1m/blurme_obfuscated_0.01_sampled_avg.dat",
              "ml-1m/blurme_obfuscated_0.01_random_avg.dat",
              "ml-1m/blurme_obfuscated_0.05_random_avg.dat",
-             "ml-1m/blurme_obfuscated_0.1_random_avg.dat",
+             "ml-1m/blurme_obfuscated_0.1_random_avg.dat",#10
              "ml-1m/blurme_obfuscated_0.1_sampled_avg.dat",
              "ml-1m/blurme_obfuscated_0.1_greedy_avg.dat",
              "ml-1m/rebalanced_(100,1500).dat",
              "ml-1m/rebalanced_(100,1000).dat",
-             "ml-1m/rebalanced_(100,700).dat",
+             "ml-1m/rebalanced_(100,700).dat",#15
+             "ml-1m/blurme_obfuscated_0.1_random_avg.dat",
+             "ml-1m/blurme_obfuscated_0.05_random_avg.dat",
+             "ml-1m/blurme_obfuscated_0.01_random_avg.dat",
+             "ml-1m/blurme_obfuscated_0.2_random_avg.dat",
+             "ml-1m/blurme_obfuscated_0.2_greedy_avg.dat",#20
+             "ml-1m/blurme_obfuscated_0.05_greedy_avg.dat",
              ]
     with open(files[file_index], 'r') as f:
         for line in f.readlines():
@@ -401,3 +407,6 @@ def load_movie_id_dictionary_1m():
             dict[int(id)] = name
     return dict
 
+
+def balance_dataset():
+    print("hi")

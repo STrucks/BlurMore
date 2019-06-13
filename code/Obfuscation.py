@@ -1,17 +1,16 @@
-from builtins import enumerate
-
 import MovieLensData as MD
 import numpy as np
 import Utils
 import Classifiers
 import matplotlib.pyplot as plt
-
+import scipy.stats as ss
 
 def blurMe_1m():
     sample_mode = list(['random', 'sampled', 'greedy'])[2]
     rating_mode = list(['highest', 'avg', 'pred'])[1]
-    # 1: get the set of most correlated movies, L_f and L_m:
+    top = 10
     X = MD.load_user_item_matrix_1m()  # max_user=max_user, max_item=max_item)
+    #X = Utils.normalize(X)
     avg_ratings = np.zeros(shape=X.shape[1])
     for item_id in range(X.shape[1]):
         ratings = []
@@ -22,6 +21,9 @@ def blurMe_1m():
             avg_ratings[item_id] = 0
         else:
             avg_ratings[item_id] = np.average(ratings)
+
+
+    # 1: get the set of most correlated movies, L_f and L_m:
     T = MD.load_gender_vector_1m()  # max_user=max_user)
     X_train, T_train = X[0:int(0.8 * len(X))], T[0:int(0.8 * len(X))]
     X_test, T_test = X[int(0.8 * len(X)):], T[int(0.8 * len(X)):]
@@ -37,13 +39,15 @@ def blurMe_1m():
         random_state = np.random.RandomState(0)
         model = LogisticRegression(penalty='l2', random_state=random_state)
         model.fit(x, t)
-        coefs.append(model.coef_)
+        # rank the coefs:
+        ranks = ss.rankdata(model.coef_[0])
+        coefs.append(ranks)
 
-    coefs = np.average(coefs, axis=0)[0]
+    coefs = np.average(coefs, axis=0)
     coefs = [[coefs[i], i+1] for i in range(len(coefs))]
     coefs = np.asarray(list(sorted(coefs)))
-    L_m = coefs[:10, 1]
-    L_f = coefs[coefs.shape[0]-10:, 1]
+    L_m = coefs[:top, 1]
+    L_f = coefs[coefs.shape[0]-top:, 1]
     L_f = list(reversed(L_f))
     """
     movie_dict = MD.load_movie_id_dictionary_1m()
@@ -59,7 +63,7 @@ def blurMe_1m():
     # Now, where we have the two lists, we can start obfuscating the data:
     X = MD.load_user_item_matrix_1m()
     X_obf = MD.load_user_item_matrix_1m()
-    p = 0.1
+    p = 0.05
     prob_m = [p / sum(L_m) for p in L_m]
     prob_f = [p / sum(L_f) for p in L_f]
     for index, user in enumerate(X):
@@ -284,11 +288,13 @@ def rating_swap_1m():
             if rating > 0:
                 nr_rating += 1
         nr_ratings.append(nr_rating)
+
+    fig, (ax1, ax2) = plt.subplots(ncols=2, sharey=True)
     if plot:
-        plt.subplot(1,2,1)
-        plt.bar(range(1,len(X)+1), nr_ratings)
-        plt.xlabel("movie id")
-        plt.ylabel("nr ratings")
+        #plt.subplot(1,2,1)
+        ax1.bar(range(1,len(X)+1), nr_ratings)
+        ax1.set_xlabel("movie id")
+        ax1.set_ylabel("nr ratings")
 
     # we want to remove ratings from movies that have more than 1500 ratings:
     amount_removed = 0
@@ -300,6 +306,7 @@ def rating_swap_1m():
             for i in indecies:
                 X_obf[item_index, i] = 0
     """ To check if the removal is working
+    
     nr_ratings = []
     for item in X_obf:
         nr_rating = 0
@@ -312,6 +319,7 @@ def rating_swap_1m():
         plt.xlabel("movie id")
         plt.ylabel("nr ratings")
         plt.show()
+    
     """
     # now we want to add ratings to movies with a small number of ratings:
     print(np.asarray(nr_ratings))
@@ -337,10 +345,10 @@ def rating_swap_1m():
                 nr_rating += 1
         nr_ratings.append(nr_rating)
     if plot:
-        plt.subplot(1,2,2)
-        plt.bar(range(1, len(X) + 1), nr_ratings)
-        plt.xlabel("movie id")
-        plt.ylabel("nr ratings")
+        #plt.subplot(1,2,2)
+        ax2.bar(range(1, len(X) + 1), nr_ratings)
+        ax2.set_xlabel("movie id")
+        ax2.set_ylabel("nr ratings")
         plt.show()
 
     X_obf = np.transpose(X_obf)

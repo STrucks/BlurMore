@@ -136,7 +136,7 @@ def ROC_plot(X, T, model):
     plt.show()
 
 
-def ROC_cv(X, T, classifier, show_plot = True):
+def ROC_cv(X, T, classifier, show_plot=True):
     import matplotlib.pyplot as plt
     from sklearn.model_selection import StratifiedKFold
     import numpy as np
@@ -152,6 +152,7 @@ def ROC_cv(X, T, classifier, show_plot = True):
     mean_fpr = np.linspace(0, 1, 100)
     recalls = []
     precisions = []
+    accuracies = []
     i = 0
     for train, test in cv.split(X, T):
         print(i)
@@ -166,6 +167,7 @@ def ROC_cv(X, T, classifier, show_plot = True):
         TPR, TNR, FPR, FNR, precision, accuracy = performance_measures(Y, T[test])
         recalls.append(TPR)
         precisions.append(precision)
+        accuracies.append(accuracy)
         probas_ = classifier.predict_proba(X[test])
         # Compute ROC curve and area the curve
         fpr, tpr, thresholds = roc_curve(T[test], probas_[:, 1])
@@ -231,6 +233,7 @@ def ROC_cv(X, T, classifier, show_plot = True):
         plt.show()
 
     print("CV recall:", np.average(recalls), "+-", np.std(recalls), "CV precision:", np.average(precisions), "+-", np.std(precisions))
+    print("CV accuracy:", np.average(accuracies))
     return mean_auc, std_auc
 
 
@@ -548,6 +551,27 @@ def remove_significant_features(X, T):
         female_ratings = X[female_index, item]
         print(male_index.shape)
 
+
+def balance_data(X, T):
+    males = X[np.argwhere(T==0)[:,0]]
+    females = X[np.argwhere(T==1)[:,0]]
+    min_size = min(len(males), len(females))
+    new_X = []
+    new_T = []
+    np.random.seed(0)
+    np.random.shuffle(males)
+    np.random.shuffle(females)
+    males = males[0:min_size]
+    females = females[0:min_size]
+    for i in range(min_size):
+        new_X.append(males[i, :])
+        new_T.append(0)
+        new_X.append(females[i, :])
+        new_T.append(1)
+
+    X = np.asarray(new_X)
+    T = np.asarray(new_T)
+    return X, T
 
 #create_occupation_label_csv_100k()
 #print(center(np.asarray([[0. ,0. ,1. ,2.,3.],[0. ,1. ,4. ,5.,6.]]),axis=1, include_zero=False))
