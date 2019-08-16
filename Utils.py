@@ -230,10 +230,10 @@ def ROC_cv(X, T, classifier, show_plot=True):
         plt.title('Receiver operating characteristic example')
         plt.legend(loc="lower right")
 
-        plt.show()
+        #plt.show()
 
     print("CV recall:", np.average(recalls), "+-", np.std(recalls), "CV precision:", np.average(precisions), "+-", np.std(precisions))
-    print("CV accuracy:", np.average(accuracies))
+    print("CV accuracy:", np.average(accuracies), np.std(accuracies))
     return mean_auc, std_auc
 
 
@@ -345,7 +345,7 @@ def ROC_cv_obf(X, X_obf, T, classifier, show_plot=True):
     from scipy import interp
 
     # Run classifier with cross-validation and plot ROC curves
-    cv = StratifiedKFold(n_splits=10)
+    cv = StratifiedKFold(n_splits=11)
 
     tprs = []
     aucs = []
@@ -403,6 +403,9 @@ def ROC_cv_obf(X, X_obf, T, classifier, show_plot=True):
         """
 
         i += 1
+    print("CV recall:", np.average(recalls), "+-", np.std(recalls), "CV precision:", np.average(precisions), "+-",
+          np.std(precisions))
+    print("CV accuracy:", np.average(accuracies), np.std(accuracies))
 
     #plt.subplot(1,2,1)
     if show_plot:
@@ -433,8 +436,6 @@ def ROC_cv_obf(X, X_obf, T, classifier, show_plot=True):
 
         plt.show()
 
-    print("CV recall:", np.average(recalls), "+-", np.std(recalls), "CV precision:", np.average(precisions), "+-", np.std(precisions))
-    print("CV accuracy:", np.average(accuracies))
     return mean_auc, std_auc
 
 

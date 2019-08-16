@@ -9,14 +9,120 @@ from sklearn.feature_selection import f_regression, f_classif, chi2
 import matplotlib.pyplot as plt
 import Models
 
+def libimseti(classifier):
+    import LibimSeTiData as LD
+    X, T, _ = LD.load_libimseti_data_subset()
+    #X = Utils.normalize(X)
+    X_train, T_train = X[0:int(0.8 * len(X))], T[0:int(0.8 * len(X))]
+    X_test, T_test = X[int(0.8 * len(X)):], T[int(0.8 * len(X)):]
+
+    # print(X)
+    print("before", X_train.shape)
+    # X = Utils.remove_significant_features(X, T)
+    # X_train, _ = Utils.random_forest_selection(X_train, T_train)
+    # X = feature_selection(X, T, Utils.select_male_female_different)
+    print(X_train.shape)
+
+    # X = Utils.normalize(X)
+    # X = Utils.standardize(X)
+    # X = chi2_selection(X, T)
+
+    classifier(X_train, T_train)
+    from sklearn.linear_model import LogisticRegression
+    random_state = np.random.RandomState(0)
+    # model = Models.Dominant_Class_Classifier()
+    model = LogisticRegression(penalty='l2', random_state=random_state)
+    model.fit(X_train, T_train)
+    Utils.ROC_plot(X_test, T_test, model)
+
+
+def libimseti_obfuscated(classifier):
+    import LibimSeTiData as LD
+    X1, T, _ = LD.load_libimseti_data_subset()
+    X2, _, _ = LD.load_libimseti_data_subset_masked(file_index=12)  # max_user=max_user, max_item=max_item)
+    # X2 = X1
+    print(X1.shape, X2.shape)
+
+    X_train, T_train = X1[0:int(0.8 * len(X1))], T[0:int(0.8 * len(X1))]
+    X_test, T_test = X2[int(0.8 * len(X2)):], T[int(0.8 * len(X2)):]
+    from sklearn.linear_model import LogisticRegression
+    random_state = np.random.RandomState(0)
+    model = LogisticRegression(penalty='l2', random_state=random_state)
+
+    Utils.ROC_cv_obf(X1, X2, T, model)
+
+
+
+def flixster(classifier):
+    import FlixsterData as FD
+    X, T = FD.load_flixster_data_subset(file="Flixster/subset_1000.txt")
+    #X = Utils.normalize(X)
+    X_train, T_train = X[0:int(0.8 * len(X))], T[0:int(0.8 * len(X))]
+    X_test, T_test = X[int(0.8 * len(X)):], T[int(0.8 * len(X)):]
+
+    # print(X)
+    print("before", X_train.shape)
+    # X = Utils.remove_significant_features(X, T)
+    # X_train, _ = Utils.random_forest_selection(X_train, T_train)
+    # X = feature_selection(X, T, Utils.select_male_female_different)
+    print(X_train.shape)
+
+    # X = Utils.normalize(X)
+    # X = Utils.standardize(X)
+    # X = chi2_selection(X, T)
+
+    classifier(X_train, T_train)
+    from sklearn.linear_model import LogisticRegression
+    random_state = np.random.RandomState(0)
+    # model = Models.Dominant_Class_Classifier()
+    model = LogisticRegression(penalty='l2', random_state=random_state)
+    model.fit(X_train, T_train)
+    Utils.ROC_plot(X_test, T_test, model)
+
+
+def flixster_obfuscated(classifier):
+    import FlixsterData as FD
+    X1, T,_ = FD.load_flixster_data_subset()
+    X2, _, _ = FD.load_flixster_data_subset_masked(file_index=15)  # max_user=max_user, max_item=max_item)
+    # X2 = X1
+    print(X1.shape, X2.shape)
+
+    # X1, T = Utils.balance_data(X1, T)
+    # X2, T2 = Utils.balance_data(X2, T)
+    # X1 = Utils.normalize(X1)
+    # X2 = Utils.normalize(X2)
+    X_train, T_train = X1[0:int(0.8 * len(X1))], T[0:int(0.8 * len(X1))]
+    X_test, T_test = X2[int(0.8 * len(X2)):], T[int(0.8 * len(X2)):]
+    print(list(X1[0, :]))
+    print(list(X2[0, :]))
+    # print(X)
+    print("before", X_train.shape)
+    # X = Utils.remove_significant_features(X, T)
+    # X_train, _ = Utils.random_forest_selection(X_train, T_train)
+    # X = feature_selection(X, T, Utils.select_male_female_different)
+    print(X_train.shape)
+    from sklearn.linear_model import LogisticRegression
+    random_state = np.random.RandomState(0)
+    model = LogisticRegression(penalty='l2', random_state=random_state)
+
+    Utils.ROC_cv_obf(X1, X2, T, model)
+
+    model = LogisticRegression(penalty='l2', random_state=random_state)
+    # model.fit(X_train, T_train)
+    # Utils.ROC_plot(X_test, T_test, model)
+
 
 def one_million(classifier):
     X = MD.load_user_item_matrix_1m()  # max_user=max_user, max_item=max_item)
+    #X = MD.load_user_item_matrix_1m_limited_ratings(limit=1)
+    #X = MD.load_user_item_matrix_1m_binary()
+
     # X = MD.load_user_genre_matrix_100k_obfuscated()
     T = MD.load_gender_vector_1m()  # max_user=max_user)
     #X, T = Utils.balance_data(X, T)
 
-    X = Utils.normalize(X)
+    #X = Utils.normalize(X)
+    X = feature_selection(X, T, Utils.select_male_female_different)
     X_train, T_train = X[0:int(0.8 * len(X))], T[0:int(0.8 * len(X))]
     X_test, T_test = X[int(0.8 * len(X)):], T[int(0.8 * len(X)):]
 
@@ -44,15 +150,14 @@ def one_million_obfuscated(classifier):
     #X2 = MD.load_user_item_matrix_1m()  # max_user=max_user, max_item=max_item)
     T = MD.load_gender_vector_1m()  # max_user=max_user)
     X1 = MD.load_user_item_matrix_1m()
-    X2 = MD.load_user_item_matrix_1m_masked(file_index=72)  # max_user=max_user, max_item=max_item)
+    X2 = MD.load_user_item_matrix_1m_masked(file_index=55)  # max_user=max_user, max_item=max_item)
+    #X2 = X1
+    print(X1.shape, X2.shape)
 
     #X1, T = Utils.balance_data(X1, T)
     #X2, T2 = Utils.balance_data(X2, T)
-    print(X1)
     #X1 = Utils.normalize(X1)
     #X2 = Utils.normalize(X2)
-    print(X1)
-    print(X2)
     X_train, T_train = X1[0:int(0.8 * len(X1))], T[0:int(0.8 * len(X1))]
     X_test, T_test = X2[int(0.8 * len(X2)):], T[int(0.8 * len(X2)):]
     print(list(X1[0,:]))

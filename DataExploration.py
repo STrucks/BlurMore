@@ -389,6 +389,7 @@ def plot_genre_1m():
 
 
 def show_gender_genre_comparison():
+    plt.rcParams.update({'font.size': 28})
     # This plot shows the
     genres = ["Action", "Adventure", "Animation", "Children\'s", "Comedy", "Crime", "Documentary", "Drama",
               "Fantasy", "Film-Noir", "Horror", "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller", "War",
@@ -415,7 +416,9 @@ def show_gender_genre_comparison():
               "Western"))
     plt.legend()
     plt.tight_layout()
-    plt.setp(ax.get_xticklabels(), rotation=20)
+    plt.setp(ax.get_xticklabels(), rotation=40)
+    plt.ylabel("Normalized rating count")
+    plt.xlabel("Genres")
     plt.show()
 
 
@@ -469,20 +472,62 @@ def feature_importance_100k():
 
 
 def feature_importance_1m():
+    plt.rcParams.update({'font.size': 18})
+
     from sklearn.ensemble import RandomForestClassifier
+    from sklearn.linear_model import LogisticRegression
+    import seaborn as sns
     X = MD.load_user_item_matrix_1m()
     T = MD.load_gender_vector_1m()
     importance = np.zeros(shape=(X.shape[1],))
-    for i in range(10):
-        model = RandomForestClassifier()
-        model.fit(X, T)
-        importance += model.feature_importances_
-    importance /= 10
-    plt.bar(range(1,len(importance[0:30])+1), importance[0:30])
-    plt.xlabel("movie index")
-    plt.ylabel("importance")
-    plt.show()
+    importance2 = np.zeros(shape=(X.shape[1],))
 
+    for i in range(10):
+        model = LogisticRegression()
+        model2 = RandomForestClassifier()
+        model.fit(X, T)
+        model2.fit(X,T)
+        importance += model.coef_[0]
+        importance2 += model2.feature_importances_
+    importance /= 10
+    importance2 /= 10
+
+    #plt.bar(range(1,len(importance[0:30])+1), importance[0:30])
+    #plt.xlabel("movie index")
+    #plt.ylabel("importance")
+    #plt.show()
+    #sns.distplot(importance, kde=False)
+    plt.hist(importance2, bins=np.linspace(0,0.001,50))
+    #sns.kdeplot(importance,shade=True,cut=0)
+    #sns.rugplot(importance)
+    plt.xlabel("importance")
+    plt.ylabel("frequency")
+    plt.title("Importance of movies distribution")
+    plt.show()
+    importance_id = zip(importance, range(1,len(importance)+1))
+    importance_id = list(reversed(sorted(importance_id)))
+    importance_id2 = zip(importance, range(1, len(importance) + 1))
+    importance_id2 = list(sorted(importance_id2))
+    importance_id3 = zip(importance2, range(1, len(importance2) + 1))
+    importance_id3 = list(reversed(sorted(importance_id3)))
+    set1 = set()
+    set2 = set()
+    set3 = set()
+
+    names = MD.load_movie_id_dictionary_1m()
+    top = 100
+    for (_, id), (_,id2), (_,id3) in zip(importance_id[0:top], importance_id2[0:top], importance_id3[0:top]):
+        print(names[id], "|", names[id2], "|", names[id3])
+        set1.add(names[id])
+        set2.add(names[id2])
+        set3.add(names[id3])
+
+    #print(set3)
+
+    print(set3.intersection(set2.union(set1)))
+
+    #print(importance_id)
+    """
     counter = 0
     for movie, score in enumerate(importance):
         if score >= 0.002:
@@ -525,9 +570,11 @@ def feature_importance_1m():
     plt.ylabel("importance")
 
     plt.show()
+    """
 
 
 def find_good_threshold():
+    plt.rcParams.update({'font.size': 18})
     import Classifiers
     import Utils
     max_user = 6040
@@ -588,7 +635,7 @@ def find_good_threshold():
 
     plt.subplot(1, 2, 2)
     plt.plot(np.linspace(begin, end, precision), size_r, c='b', label='number of important movies')
-    plt.plot(np.linspace(begin, end, precision), size_i, c='r', label='number of meaningless movies')
+    plt.plot(np.linspace(begin, end, precision), size_i, c='r', label='number of irrelevant movies')
     plt.xlabel("Threshold")
     plt.ylabel("#samples in data")
     plt.legend()
@@ -596,31 +643,38 @@ def find_good_threshold():
 
 
 def comp_BM_and_BMpp():
-    plt.rcParams.update({'font.size': 22})
+    plt.rcParams.update({'font.size': 28})
     f, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
+    interval_start, interval_end = 0, 50
     X = MD.load_user_item_matrix_1m()
-    X_movie_count = [sum([1 if x > 0 else 0 for x in movie]) for movie in np.transpose(X)[0:50]]
-    ax1.bar(range(len(X_movie_count)), X_movie_count)
-    ax1.set_title("Original data")
+    X_movie_count = [sum([1 if x > 0 else 0 for x in movie]) for movie in np.transpose(X)[interval_start:interval_end]]
+    movie_count_o = np.asarray(X_movie_count)
+    ax1.bar(range(interval_start,interval_end), X_movie_count)
+    ax1.set_title("(A)\nOriginal data")
     ax1.set_xlabel("movie ID")
     ax1.set_ylabel("#ratings")
+    #ax1.set_xticks(range(1,6), [1,2,3,4,5])
     print("Original Data:", sum(X_movie_count))
 
-    X = MD.load_user_item_matrix_1m_masked(file_index=51)
-    X_movie_count = [sum([1 if x > 0 else 0 for x in movie]) for movie in np.transpose(X)[0:50]]
-    ax2.bar(range(len(X_movie_count)), X_movie_count)
-    ax2.set_title("BlurMe data")
+    X = MD.load_user_item_matrix_1m_masked(file_index=63)
+    X_movie_count = [sum([1 if x > 0 else 0 for x in movie]) for movie in np.transpose(X)[interval_start:interval_end]]
+    masked_count = np.asarray(X_movie_count)
+    ax2.bar(range(interval_start, interval_end), X_movie_count)
+    ax2.set_title("(B)\nBlurMe data")
     ax2.set_xlabel("movie ID")
     ax2.set_ylabel("#ratings")
     print("BlurMe Data:", sum(X_movie_count))
 
-    X = MD.load_user_item_matrix_1m_masked(file_index=53)
-    X_movie_count = [sum([1 if x > 0 else 0 for x in movie]) for movie in np.transpose(X)[0:50]]
-    ax3.bar(range(len(X_movie_count)), X_movie_count)
-    ax3.set_title("BlurMe++ data")
+    X = MD.load_user_item_matrix_1m_masked(file_index=75)
+    X_movie_count = [sum([1 if x > 0 else 0 for x in movie]) for movie in np.transpose(X)[interval_start:interval_end]]
+    masked_count2 = np.asarray(X_movie_count)
+    ax3.bar(range(interval_start, interval_end), X_movie_count)
+    ax3.set_title("(C)\nBlurM(or)e data")
     ax3.set_xlabel("movie ID")
     ax3.set_ylabel("#ratings")
     print("BlurMe++ Data:", sum(X_movie_count))
+    print(movie_count_o-masked_count)
+    print(masked_count-masked_count2)
     plt.show()
 
 
@@ -666,41 +720,262 @@ def rating_distr():
     X = MD.load_user_item_matrix_1m()
     f, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
     frequencies = np.zeros(shape=(6,))
+    ratings = []
+    movie_ids = []
     for user in X:
-        for rating in user:
+        for index, rating in enumerate(user):
             frequencies[int(rating)] += 1
+            if rating > 0:
+                movie_ids.append(index+1)
+                ratings.append(rating)
     print(frequencies)
     print(sum(frequencies[1:]), np.mean(frequencies[1:]), np.var(frequencies[1:]))
     print("mean:", np.dot(np.arange(0, 6), frequencies) / sum(frequencies), "without 0:",
           np.dot(np.arange(1, 6), frequencies[1:]) / sum(frequencies[1:]))
-
+    print("Avg", np.average(ratings), "var", np.var(ratings))
+    print(len(set(movie_ids)))
     ax1.bar(range(5), frequencies[1:])
     ax1.set_xlabel("Original")
     X = MD.load_user_item_matrix_1m_masked(file_index=71)# greedy 10%
     frequencies = np.zeros(shape=(6,))
+    ratings = []
+
     for user in X:
         for rating in user:
             frequencies[int(rating)] += 1
+            if rating > 0:
+                ratings.append(rating)
+
     print(frequencies)
     print(sum(frequencies[1:]), np.mean(frequencies[1:]), np.var(frequencies[1:]))
 
     print("mean:", np.dot(np.arange(0, 6), frequencies) / sum(frequencies), "without 0:",
           np.dot(np.arange(1, 6), frequencies[1:]) / sum(frequencies[1:]))
+    print("Avg", np.average(ratings), "var", np.var(ratings))
 
     ax2.bar(range(5), frequencies[1:])
     ax2.set_xlabel("BlurMe")
     X = MD.load_user_item_matrix_1m_masked(file_index=55)# BlurMe++ 10%, fac=2
     frequencies = np.zeros(shape=(6,))
+    ratings = []
     for user in X:
         for rating in user:
             frequencies[int(rating)] += 1
+            if rating > 0:
+                ratings.append(rating)
     print(frequencies)
     print(sum(frequencies[1:]), np.mean(frequencies[1:]), np.var(frequencies[1:]))
     print("mean:", np.dot(np.arange(0, 6), frequencies) / sum(frequencies), "without 0:",
           np.dot(np.arange(1, 6), frequencies[1:]) / sum(frequencies[1:]))
+    print("Avg", np.average(ratings), "var", np.var(ratings))
 
     ax3.bar(range(5), frequencies[1:])
     ax3.set_xlabel("BlurMe++")
+    plt.show()
+
+
+def movie_ratings():
+    X = MD.load_user_item_matrix_1m()
+    freqs = []
+    for movie in np.transpose(X):
+        freq = 0
+        for rating in movie:
+            if rating > 0:
+                freq+=1
+        freqs.append(freq)
+    print(list(sorted(freqs)))
+    print(set(freqs))
+    #plt.bar(range(len(freqs)), freqs)
+    #plt.show()
+
+
+def RMSE_plot():
+    original = [0.8766,0,0,0]
+    blurme = [0,0.8686,0.8553,0.8385]
+    blurmepp = [0,0.8711,0.8640,0.8468]
+
+    ind = np.arange(len(original))  # the x locations for the groups
+    width = 0.35  # the width of the bars
+    plt.rcParams.update({'font.size': 15})
+
+    fig, ax = plt.subplots()
+    rects1 = ax.bar(ind, original, width, label='Original')
+    rects2 = ax.bar(ind-width/2, blurme, width, label='BlurMe')
+    rects2 = ax.bar(ind+width/2, blurmepp, width, label='BlurMe++')
+
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_ylabel('RMSE')
+    ax.set_title('RMSE for the different data sets')
+    ax.set_xticks(ind)
+    ax.set_xticklabels(('None', '1', '5', '10'))
+    ax.set_xlabel("Percent ratings added")
+    ax.legend()
+    fig.tight_layout()
+
+    plt.show()
+
+
+def compare_real_fake():
+    import RealFakeData as RFD
+    real = MD.load_user_item_matrix_1m()
+    real = real[0:40, 0:40]
+    # fake = load_user_item_matrix_100k()
+    # fake = simulate_data(real.shape)
+    fake_bm = RFD.load_user_item_matrix_1m_masked(file_index=12)
+    fake_bm = fake_bm[0:40, 0:40]
+
+    fake_bmpp = RFD.load_user_item_matrix_1m_masked(file_index=17)
+    fake_bmpp = fake_bmpp[00:40, 0:40]
+    print(fake_bmpp.shape)
+
+    plt.subplot(3,3,1)
+    plt.imshow(real)
+    plt.title("real")
+
+    plt.subplot(3,3,4)
+    plt.imshow(fake_bm)
+    plt.title("fake_bm")
+
+    plt.subplot(3, 3, 7)
+    plt.imshow(fake_bmpp)
+    plt.title("fake_bmpp")
+
+    plt.subplot(3, 3, 5)
+    plt.imshow(real-fake_bm)
+    plt.title("real-fake_bm")
+
+    plt.subplot(3, 3, 8)
+    plt.imshow(real - fake_bmpp)
+    plt.title("real-fake_bmpp")
+
+    plt.show()
+
+
+def stats_of_flixster():
+    import FlixsterData as FD
+    id2index, index2id = FD.load_user_id_index_dict()
+    #print("number of users in data set:", len(index2id))
+    user_gender = FD.load_user_gender()
+    gender_vector = [user_gender[key] for key in user_gender]
+    #print("possible values for gender", set(gender_vector))
+    import collections
+    counter = collections.Counter(gender_vector)
+    #print("Distribution of values", counter)
+    #print("making", counter['Male']+counter['Female'], "valid users")
+    print("valid user profiles:", len(id2index))
+    movies = FD.load_movies()
+    print("number of movies", len(movies.keys()))
+
+    interactions = 0
+    nr_ratings = np.zeros(shape=(935267,))
+    ratings = []
+    with open("Flixster/ratings.txt", 'r', encoding='utf-16') as f:
+        for line in f.readlines()[1:]:
+            if len(line) < 2:
+                continue
+            else:
+                user_id, _, rating, _ = line.split("\t")
+                if user_id in id2index:
+                    #if id2index[user_id] < 100:
+                    nr_ratings[id2index[user_id]] += 1
+                    ratings.append(float(rating))
+                interactions += 1
+    print("number of interactions", interactions)
+    print("ratings avg", np.average(ratings), np.var(ratings))
+    counter = 0
+    for rating in nr_ratings:
+        if rating > 0:
+            counter += 1
+    print(counter)
+
+    print("on subset of 400 users:")
+    X, T = FD.load_flixster_data()
+    interactions = 0
+    for user in X:
+        for rating in user:
+            if rating > 0:
+                interactions += 1
+    print("interactions:", interactions)
+    counter = collections.Counter(T)
+    print(counter)
+
+
+def stats_libimseti():
+    ratings = []
+    with open("libimseti/ratings.dat", 'r') as f:
+        for line in f.readlines():
+            user_id, _, rating = line.split(",")
+            ratings.append(float(rating))
+
+    print("ratings avg", np.average(ratings), np.var(ratings))
+    plt.hist(ratings)
+    plt.show()
+
+
+def global_stats_ML_obf():
+    plt.rcParams.update({'font.size': 28})
+    original = MD.load_user_item_matrix_1m()
+    blurme = MD.load_user_item_matrix_1m_masked(file_index=71)
+    blurmore = MD.load_user_item_matrix_1m_masked(file_index=55)
+    ratings = [1, 2, 3, 4, 5]
+    rating_distribution = np.zeros(shape=(3,5))
+    nr_ratings = np.zeros(shape=(3, blurme.shape[0]))
+    rating_distribution_new = np.zeros(shape=(5,))
+
+    """"""
+    for user_index in range(blurme.shape[0]):
+        for movie_index in range(blurme.shape[1]):
+            #if original[user_index, movie_index] != blurme[user_index, movie_index]:
+            #    rating_distribution_new[int(blurme[user_index, movie_index]) - 1] += 1
+
+            if original[user_index, movie_index] in ratings:
+                nr_ratings[0, user_index] += 1
+                rating_distribution[0, int(original[user_index, movie_index])-1] += 1
+            if blurme[user_index, movie_index] in ratings:
+                nr_ratings[1, user_index] += 1
+                rating_distribution[1, int(blurme[user_index, movie_index])-1] += 1
+            if blurmore[user_index, movie_index] in ratings:
+                nr_ratings[2, user_index] += 1
+                rating_distribution[2, int(blurmore[user_index, movie_index])-1] += 1
+    f, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
+    ax1.bar(range(1, 6), rating_distribution[1,:] - rating_distribution[0, :])
+    ax2.bar(range(1, 6), rating_distribution[2, :] - rating_distribution[0, :])
+    plt.show()
+    print("new ratings:", rating_distribution)
+    f, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
+
+    rating_distribution[0, :] /= sum(rating_distribution[0,:])
+    rating_distribution[1, :] /= sum(rating_distribution[1,:])
+    rating_distribution[2, :] /= sum(rating_distribution[2,:])
+    print(rating_distribution)
+    nr_ratings[0, :] = list(reversed(sorted(nr_ratings[0, :])))
+    nr_ratings[1, :] = list(reversed(sorted(nr_ratings[1, :])))
+    nr_ratings[2, :] = list(reversed(sorted(nr_ratings[2, :])))
+    print(nr_ratings)
+    ax1.bar(range(1, 6), rating_distribution[0, :])
+    ax1.set_xlabel("Rating")
+    ax1.set_ylabel("Rating Frequency in %")
+    ax1.set_title("Rating frequency \noriginal ML")
+    ax2.bar(range(1, 6), rating_distribution[1, :])
+    ax2.set_xlabel("Rating")
+    #ax2.set_ylabel("Rating Frequency")
+    ax2.set_title("Rating frequency \nBlurMe")
+    ax3.bar(range(1, 6), rating_distribution[2, :])
+    ax3.set_xlabel("Rating")
+    #ax3.set_ylabel("Rating Frequency")
+    ax3.set_title("Rating frequency \nBlurM(or)e")
+    plt.show()
+
+    f, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
+    ax1.bar(range(100), nr_ratings[0, 0:100])
+    ax2.bar(range(100), nr_ratings[1, 0:100])
+    ax3.bar(range(100), nr_ratings[2, 0:100])
+    plt.show()
+
+    f, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
+    ax1.plot(range(300), nr_ratings[0, -300:])
+    ax2.plot(range(300), nr_ratings[1, -300:])
+    ax3.plot(range(300), nr_ratings[2, -300:])
     plt.show()
 
 
@@ -716,7 +991,14 @@ def rating_distr():
 #show_gender_genre_comparison()
 #PCA_100k()
 #feature_importance_1m()
+find_good_threshold()
 #comp_BM_and_BMpp()
 #avg_rating_diff()
 #gender_rating_distr()
-rating_distr()
+#rating_distr()
+#movie_ratings()
+#RMSE_plot()
+#compare_real_fake()
+#stats_of_flixster()
+#stats_libimseti()
+#global_stats_ML_obf()

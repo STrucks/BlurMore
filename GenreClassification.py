@@ -6,8 +6,9 @@ import numpy as np
 def one_million(classifier):
     max_user = 6040
     max_item = 3952
-    X = MD.load_user_item_matrix_1m()  # max_user=max_user, max_item=max_item)
-    T = MD.load_user_genre_matrix_1m(one_hot=True, top=1)
+    #X = MD.load_user_item_matrix_1m()  # max_user=max_user, max_item=max_item)
+    X = MD.load_user_item_matrix_1m_masked(file_index=71)
+    T = MD.load_user_genre_matrix_1m(one_hot=True, top=5)
     T = np.argwhere(T==1)[:,1]
     print(min(T), max(T))
     """

@@ -61,12 +61,12 @@ def load_user_item_matrix_100k_masked(max_user=943, max_item=1682, file_index=-1
                     "ml-100k/shuffle_remove_features.csv",
                     "ml-100k/shuffle_remove_features_277.csv",
                     "ml-100k/shuffle_feauture_111.csv",
-                    "ml-100k/shuffle_feauture_1140.csv",
+                    "ml-100k/shuffle_feauture_1140.csv",#5
                     "ml-100k/shuffle_within_1153.csv",
                     "ml-100k/blurme_obfuscated_0.1.csv",
                     "ml-100k/blurme_obfuscated_0.05.csv",
                     "ml-100k/blurme_obfuscated_0.01.csv",
-                    "ml-100k/blurme_obfuscated_0.1_greedy_avg.csv",
+                    "ml-100k/blurme_obfuscated_0.1_greedy_avg.csv",#10
 
                     ]
     with open(masked_files[file_index], 'r') as f:
@@ -92,6 +92,7 @@ def load_user_item_matrix_1m(max_user=6040, max_item=3952):
     #if os.path.isfile("objs/user-item_Matrix_1m_" + str(max_user) + "_" + str(max_item)):
     #    load_object("objs/user-item_Matrix_1m_" + str(max_user) + "_" + str(max_item))
 
+    #id_index, _ = load_movie_id_index_dict()
     df = np.zeros(shape=(max_user, max_item))
     with open("ml-1m/ratings.dat", 'r') as f:
         for line in f.readlines():
@@ -102,6 +103,16 @@ def load_user_item_matrix_1m(max_user=6040, max_item=3952):
 
     #save_object(df, "objs/user-item_Matrix_1m_" + str(max_user) + "_" + str(max_item))
     return df
+
+
+def load_user_item_matrix_1m_binary():
+    X = load_user_item_matrix_1m()
+    ratings = np.argwhere(X>0)
+    print(ratings)
+    X = np.zeros(shape=X.shape)
+    for x, y in ratings:
+        X[x, y] = 1
+    return X
 
 
 def load_user_item_matrix_1m_masked(max_user=6040, max_item=3952, file_index=-1):
@@ -151,37 +162,72 @@ def load_user_item_matrix_1m_masked(max_user=6040, max_item=3952, file_index=-1)
              "ml-1m/blurme_obfuscated_0.05_random_avg_top500.dat",
              "ml-1m/blurme_obfuscated_0.1_random_avg_top500.dat",
              "ml-1m/blurme_obfuscated_0.2_random_avg_top500.dat",
-             "ml-1m/blurme_obfuscated_0.01_sampled_avg_top500.dat",#45
+             "ml-1m/blurme_obfuscated_0.01_sampled_avg_top500.dat",  #45
              "ml-1m/blurme_obfuscated_0.05_sampled_avg_top500.dat",
              "ml-1m/blurme_obfuscated_0.1_sampled_avg_top500.dat",
              "ml-1m/blurme_obfuscated_0.2_sampled_avg_top500.dat",
              "ml-1m/blurme_obfuscated_0.01_greedy_avg_top500.dat",
-             "ml-1m/blurme_obfuscated_0.05_greedy_avg_top500.dat",#50
+             "ml-1m/blurme_obfuscated_0.05_greedy_avg_top500.dat",  #50
              "ml-1m/blurme_obfuscated_0.1_greedy_avg_top500.dat",
              "ml-1m/blurme_obfuscated_0.2_greedy_avg_top500.dat",
-             "ml-1m/blurmepp_obfuscated_0.01_2.dat",
-             "ml-1m/blurmepp_obfuscated_0.05_2.dat",
-             "ml-1m/blurmepp_obfuscated_0.1_2.dat",#55
+             "ml-1m/blurmepp_obfuscated_greedy_0.01_2.dat",
+             "ml-1m/blurmepp_obfuscated_greedy_0.05_2.dat",
+             "ml-1m/blurmepp_obfuscated_greedy_0.1_2.dat",  #55
              "ml-1m/blurmepp_obfuscated_0.2_2.dat",
              "ml-1m/blurme_obfuscated_normalized_0.1_greedy_avg_top500.dat",
              "ml-1m/blurme_obfuscated_0.1_random_avg_top2000.dat",
              "ml-1m/blurme_obfuscated_0.1_random_avg_top1000.dat",
-             "ml-1m/blurme_obfuscated_0.05_random_avg_top2000.dat", #60
+             "ml-1m/blurme_obfuscated_0.05_random_avg_top2000.dat",  #60
              "ml-1m/blurme_obfuscated_0.01_random_avg_top-1.dat",
              "ml-1m/blurme_obfuscated_0.05_random_avg_top-1.dat",
              "ml-1m/blurme_obfuscated_0.1_random_avg_top-1.dat",
              "ml-1m/blurme_obfuscated_0.2_random_avg_top-1.dat",
-             "ml-1m/blurme_obfuscated_0.01_sampled_avg_top-1.dat",#65
+             "ml-1m/blurme_obfuscated_0.01_sampled_avg_top-1.dat",  #65
              "ml-1m/blurme_obfuscated_0.05_sampled_avg_top-1.dat",
              "ml-1m/blurme_obfuscated_0.1_sampled_avg_top-1.dat",
              "ml-1m/blurme_obfuscated_0.2_sampled_avg_top-1.dat",
              "ml-1m/blurme_obfuscated_0.01_greedy_avg_top-1.dat",
-             "ml-1m/blurme_obfuscated_0.05_greedy_avg_top-1.dat",#70
+             "ml-1m/blurme_obfuscated_0.05_greedy_avg_top-1.dat",  #70
              "ml-1m/blurme_obfuscated_0.1_greedy_avg_top-1.dat",
              "ml-1m/blurme_obfuscated_0.2_greedy_avg_top-1.dat",
+             "ml-1m/blurmepp_obfuscated_random_0.01_2.dat",
+             "ml-1m/blurmepp_obfuscated_random_0.05_2.dat",
+             "ml-1m/blurmepp_obfuscated_random_0.1_2.dat",  #75
+             "ml-1m/blurmepp_x2_obfuscated_greedy_0.01_2.dat",
+             "ml-1m/blurmepp_x2_obfuscated_greedy_0.05_2.dat",
+             "ml-1m/blurmepp_x2_obfuscated_greedy_0.1_2.dat",
+             "ml-1m/blurme_x2_obfuscated_0.01_greedy.dat",
+             "ml-1m/blurme_x2_obfuscated_0.05_greedy.dat",  #80
+             "ml-1m/blurme_x2_obfuscated_0.1_greedy.dat",
+             "ml-1m/blurmebetter_obfuscated_random_0.01_2.dat",
+             "ml-1m/blurmebetter_obfuscated_random_0.05_2.dat",
+             "ml-1m/blurmebetter_obfuscated_random_0.1_2.dat",
+             "ml-1m/blurmebetter_obfuscated_greedy_0.01_2_c0.5.dat",  #85
+             "ml-1m/blurmebetter_obfuscated_greedy_0.05_2_c0.5.dat",
+             "ml-1m/blurmebetter_obfuscated_greedy_0.1_2_c0.5.dat",
+             "ml-1m/blurmebetter_obfuscated_greedy_0.01_2_c0.8.dat",
+             "ml-1m/blurmebetter_obfuscated_greedy_0.05_2_c0.8.dat",
+             "ml-1m/blurmebetter_obfuscated_greedy_0.1_2_c0.8.dat",  #90
+             "ml-1m/blurmebetter_obfuscated_greedy_0.01_2_c0.95.dat",
+             "ml-1m/blurmebetter_obfuscated_greedy_0.05_2_c0.95.dat",
+             "ml-1m/blurmebetter_obfuscated_greedy_0.1_2_c0.95.dat",
+             "ml-1m/blurmebetter_obfuscated_greedy_0.01_2_c0.99.dat",
+             "ml-1m/blurmebetter_obfuscated_greedy_0.05_2_c0.99.dat",  #95
+             "ml-1m/blurmebetter_obfuscated_greedy_0.1_2_c0.99.dat",
+             "ml-1m/blurmebetter_obfuscated_greedy_0.01_2_c0.999999.dat",
+             "ml-1m/blurmebetter_obfuscated_greedy_0.05_2_c0.999999.dat",
+             "ml-1m/blurmebetter_obfuscated_greedy_0.1_2_c0.999999.dat",
+             "ml-1m/blurmepp_x2_obfuscated_random_0.01_2.dat", #100
+             "ml-1m/blurmepp_x2_obfuscated_random_0.05_2.dat",
+             "ml-1m/blurmepp_x2_obfuscated_random_0.1_2.dat",
+             "ml-1m/blurme_x2_obfuscated_0.01_random.dat",
+             "ml-1m/blurme_x2_obfuscated_0.05_random.dat",
+             "ml-1m/blurme_x2_obfuscated_0.1_random.dat",#105
 
              ]
+    #id_index, _ = load_movie_id_index_dict()
     df = np.zeros(shape=(max_user, max_item))
+
     with open(files[file_index], 'r') as f:
         for line in f.readlines():
             user_id, movie_id, rating, _ = line.split("::")
@@ -190,6 +236,17 @@ def load_user_item_matrix_1m_masked(max_user=6040, max_item=3952, file_index=-1)
                 df[user_id-1, movie_id-1] = rating
 
     return df
+
+
+def load_movie_id_index_dict():
+    id_index = {}
+    index_id = {}
+    with open("ml-1m/movies.dat", 'r') as f:
+        for index, line in enumerate(f.readlines()):
+            id, name, genres = line.split("::")
+            id_index[int(id)] = index
+            index_id[index] = int(id)
+    return id_index, index_id
 
 
 def load_user_item_matrix_1m_limited_ratings(limit=20):
